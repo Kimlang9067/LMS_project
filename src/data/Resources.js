@@ -29,8 +29,6 @@ export const resources = [
   { id: 28, title: "Network Security Fundamentals",           type: "Book",    status: "Checked Out", link: "https://www.amazon.com/Network-Security-Fundamentals-Herbert-Mattord/dp/1337390701" },
   { id: 29, title: "Blockchain Technology",                   type: "Book",    status: "Available",   link: "https://www.ibm.com/topics/blockchain" },
   { id: 30, title: "Internet of Things (IoT)",                type: "Book",    status: "Available",   link: "https://www.oracle.com/internet-of-things/what-is-iot/" },
-
-  // 70 NEW BOOKS
   { id: 31, title: "Clean Code",                              type: "Book",    status: "Available",   link: "https://www.amazon.com/Clean-Code-Handbook-Software-Craftsmanship/dp/0132350882" },
   { id: 32, title: "The Pragmatic Programmer",                type: "Book",    status: "Available",   link: "https://pragprog.com/titles/tpp20/the-pragmatic-programmer-20th-anniversary-edition/" },
   { id: 33, title: "Design Patterns",                         type: "Book",    status: "Checked Out", link: "https://www.amazon.com/Design-Patterns-Elements-Reusable-Object-Oriented/dp/0201633612" },

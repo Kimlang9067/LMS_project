@@ -2,7 +2,12 @@ import { resources } from "./Resources";
 import { PAYMENT_QR_CODE } from "../config/payment";
 
 export const paidBookMeta = {
-    32: {
+  31: {
+    price: 3.0,
+    description:
+      "Clean Code teaches you how to write readable, maintainable software. Robert C. Martin shares practical rules and examples for naming, functions, comments, and refactoring so your code stays easy to work with over time."
+  },
+  32: {
     price: 3.0,
     description:
       "The Pragmatic Programmer teaches practical software development habits, focusing on problem-solving, code quality, and long-term thinking for developers."
@@ -17,6 +22,11 @@ export const paidBookMeta = {
     description:
       "Refactoring shows how to safely improve existing code structure to make it cleaner, more efficient, and easier to maintain."
   },
+  37: {
+    price: 3.0,
+    description:
+      "Cracking the Coding Interview prepares you for technical interviews with hundreds of programming questions, solutions, and strategies for problem-solving, data structures, and algorithms.",
+  },
   38: {
     price: 6.0,
     description:
@@ -26,6 +36,11 @@ export const paidBookMeta = {
     price: 4.0,
     description:
       "Artificial Intelligence: A Modern Approach explains core AI concepts such as search, logic, planning, and intelligent agents."
+  },
+  43: {
+    price: 4.5,
+    description:
+      "Deep Learning is a comprehensive textbook covering neural networks, optimization, convolutional networks, sequence modeling, and modern AI research. Ideal for students and practitioners building a strong theoretical foundation.",
   },
   44: {
     price: 3.5,
@@ -51,6 +66,11 @@ export const paidBookMeta = {
     price: 3.0,
     description:
       "Data Mining: Concepts and Techniques explains how to extract patterns and knowledge from large datasets."
+  },
+  59: {
+    price: 4.0,
+    description:
+      "Designing Data-Intensive Applications explores how modern systems handle storage, processing, and reliability at scale. Essential reading for backend engineers and system designers.",
   },
   61: {
     price: 3.5,
@@ -102,16 +122,6 @@ export const paidBookMeta = {
     description:
       "Learning SQL teaches how to query, manage, and analyze data using relational databases."
   },
-  31: {
-    price: 3.0,
-    description:
-      "Clean Code teaches you how to write readable, maintainable software. Robert C. Martin shares practical rules and examples for naming, functions, comments, and refactoring so your code stays easy to work with over time.",
-  },
-  43: {
-    price: 4.5,
-    description:
-      "Deep Learning is a comprehensive textbook covering neural networks, optimization, convolutional networks, sequence modeling, and modern AI research. Ideal for students and practitioners building a strong theoretical foundation.",
-  },
   101: {
     price: 2.5,
     description:
@@ -121,6 +131,11 @@ export const paidBookMeta = {
     price: 3.0,
     description:
       "Dune is set on the desert planet Arrakis, where politics, ecology, and prophecy collide. Paul Atreides must navigate betrayal and destiny in one of science fiction's most influential epics.",
+  },
+  106: {
+    price: 2.0,
+    description:
+      "The Hunger Games is set in Panem, where Katniss Everdeen volunteers for a televised fight to the death to save her sister. A gripping dystopian novel about survival, sacrifice, and rebellion.",
   },
   123: {
     price: 2.0,
@@ -137,34 +152,20 @@ export const paidBookMeta = {
     description:
       "The Martian tells the story of astronaut Mark Watney, stranded on Mars and forced to survive using science, ingenuity, and humor while NASA races to bring him home.",
   },
-  106: {
-    price: 2.0,
-    description:
-      "The Hunger Games is set in Panem, where Katniss Everdeen volunteers for a televised fight to the death to save her sister. A gripping dystopian novel about survival, sacrifice, and rebellion.",
-  },
-  37: {
-    price: 3.0,
-    description:
-      "Cracking the Coding Interview prepares you for technical interviews with hundreds of programming questions, solutions, and strategies for problem-solving, data structures, and algorithms.",
-  },
-  59: {
-    price: 4.0,
-    description:
-      "Designing Data-Intensive Applications explores how modern systems handle storage, processing, and reliability at scale. Essential reading for backend engineers and system designers.",
-  },
 };
 
 export function enrichBook(book) {
-  const meta = paidBookMeta[book.id];
+  const meta = paidBookMeta[Number(book.id)];
   return {
-    ...book,
+    ...book, // Spreads original properties (including original 'status')
     description:
       meta?.description ??
       `"${book.title}" is a ${book.type.toLowerCase()} resource in our library collection. Browse the details below and borrow it when available.`,
     requiresPayment: Boolean(meta),
-    price: meta?.price ?? null,
+    price: meta?.price ?? 0,
+    isPremium: !!meta,
     qrCode: meta?.qrCode ?? PAYMENT_QR_CODE,
-    status: "Available",
+    // status: "Available" <-- Removed so it doesn't smash book.status from Resources.js
   };
 }
 

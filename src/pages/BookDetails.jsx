@@ -8,10 +8,13 @@ export default function BookDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem("userAccount"));
+  
+  // Safely grab the book ensuring ID format uniformity
   const book = getBookById(id);
 
+  // Ensure we check using a parsed number to match tracking utilities safely
   const [paid, setPaid] = useState(() =>
-    book ? isBookPaid(book.id) : false
+    book ? isBookPaid(Number(book.id)) : false
   );
   const [borrowMessage, setBorrowMessage] = useState("");
   const [borrowed, setBorrowed] = useState(false);
@@ -56,7 +59,7 @@ export default function BookDetails() {
   const canBorrow = book.requiresPayment ? paid : true;
 
   const handleConfirmPayment = () => {
-    markBookPaid(book.id);
+    markBookPaid(Number(book.id));
     setPaid(true);
   };
 
@@ -85,7 +88,6 @@ export default function BookDetails() {
     setBorrowMessage("Book borrowed successfully! Check Circulation for your record.");
     setBorrowed(true);
   };
-  
 
   return (
     <Home isLoggedIn={true} user={user}>
@@ -141,6 +143,7 @@ export default function BookDetails() {
             {book.description}
           </p>
 
+          {/* FIXED: Uses your robust requiresPayment evaluation instead of explicit null testing */}
           {book.requiresPayment && !paid && (
             <div
               style={{
@@ -175,18 +178,18 @@ export default function BookDetails() {
                     textAlign: "center",
                   }}
                 >
-                <img
-                  src={book.qrCode}
-                  alt="Payment QR code"
-                  style={{
-                    width: "100%",
-                    maxWidth: "380px",
-                    height: "auto",
-                    objectFit: "contain",
-                    borderRadius: "12px",
-                    border: "1px solid #e5e5e5",
-                  }}
-                />
+                  <img
+                    src={book.qrCode}
+                    alt="Payment QR code"
+                    style={{
+                      width: "100%",
+                      maxWidth: "380px",
+                      height: "auto",
+                      objectFit: "contain",
+                      borderRadius: "12px",
+                      border: "1px solid #e5e5e5",
+                    }}
+                  />
                   <p style={{ marginTop: "10px", fontSize: "13px", color: "#666" }}>
                     Scan to Pay
                   </p>
@@ -199,10 +202,10 @@ export default function BookDetails() {
                 onClick={handleConfirmPayment}
                 style={{ ...btnStyle("#15803d"), marginTop: "16px" }}
                 onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = "#ff0000";
+                  e.currentTarget.style.backgroundColor = "#166534"; // Darker green
                 }}
                 onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = "#078b00";
+                  e.currentTarget.style.backgroundColor = "#15803d"; // Resets clean green
                 }}
               >
                 I have paid
@@ -248,10 +251,10 @@ export default function BookDetails() {
               disabled={!canBorrow}
               style={btnStyle(canBorrow ? "#3b82f6" : "#ccc")}
               onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = "#666890";
+                if (canBorrow) e.currentTarget.style.backgroundColor = "#2563eb";
               }}
               onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = "blue";
+                if (canBorrow) e.currentTarget.style.backgroundColor = "#3b82f6";
               }}
             >
               Borrow Book
@@ -272,10 +275,10 @@ export default function BookDetails() {
                 cursor: "pointer",
               }}
               onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = "#666890";
+                e.currentTarget.style.backgroundColor = "#1e40af";
               }}
               onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = "blue";
+                e.currentTarget.style.backgroundColor = "#1d4ed8";
               }}
             >
               Go to Book Resource
@@ -309,5 +312,6 @@ function btnStyle(bg) {
     fontWeight: "700",
     cursor: bg === "#ccc" ? "not-allowed" : "pointer",
     fontSize: "14px",
+    transition: "background-color 0.2s ease",
   };
 }
