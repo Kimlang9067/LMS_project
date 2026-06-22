@@ -1,12 +1,14 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Home from "./Home";
-import { resources } from "../data/Resources";
+import { getEnrichedResources } from "../data/bookMeta";
 
 export default function Catalog() {
   const [search, setSearch] = useState("");
+  const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem("userAccount"));
 
-  const filteredResources = resources.filter((book) =>
+  const filteredResources = getEnrichedResources().filter((book) =>
     book.title.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -89,29 +91,37 @@ export default function Catalog() {
                 {book.type}
               </span>
 
-              <div style={{ marginTop: "15px" }}>
+              <div style={{ marginTop: "15px", display: "flex", gap: "8px", flexWrap: "wrap" }}>
                 <span
                   style={{
-                    backgroundColor:
-                      book.status === "Available"
-                        ? "#dcfce7"
-                        : "#fee2e2",
-                    color:
-                      book.status === "Available"
-                        ? "#15803d"
-                        : "#dc2626",
+                    backgroundColor: "#dcfce7",
+                    color: "#15803d",
                     padding: "6px 12px",
                     borderRadius: "20px",
                     fontSize: "12px",
                     fontWeight: "700",
                   }}
                 >
-                  {book.status}
+                  Available
                 </span>
+                {book.requiresPayment && (
+                  <span
+                    style={{
+                      backgroundColor: "#fef3c7",
+                      color: "#b45309",
+                      padding: "6px 12px",
+                      borderRadius: "20px",
+                      fontSize: "12px",
+                      fontWeight: "700",
+                    }}
+                  >
+                    ${book.price.toFixed(2)}
+                  </span>
+                )}
               </div>
 
               <button
-                onClick={() => window.open(book.link, '_blank')}
+                onClick={() => navigate(`/catalog/${book.id}`)}
                 style={{
                   marginTop: "18px",
                   width: "100%",
@@ -122,6 +132,12 @@ export default function Catalog() {
                   color: "#fff",
                   fontWeight: "700",
                   cursor: "pointer",
+                }}
+                onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = "gray";
+                }}
+                onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = "black";
                 }}
               >
                 View Details

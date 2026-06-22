@@ -177,7 +177,7 @@ export default function Home(props) {
                 System
               </div>
               <div style={{ fontSize: "12px", color: "#ffffff" }}>
-                Institutional Resource Portal
+                Institutional of Resource 
               </div>
             </div>
           </div>
@@ -451,10 +451,7 @@ export default function Home(props) {
         <footer style={s.footer}>
           <div>
             <div style={{ fontWeight: "800", fontSize: "16px" }}>Data_Science Library</div>
-            <p style={{ fontSize: "12px", color: "#aaa" }}>©Library Management System. Licensed Public Portal.</p>
-          </div>
-          <div style={{ display: "flex", gap: "20px", fontSize: "13px", flexWrap: "wrap" }}>
-            <span>Privacy Policy</span><span>Terms of Use</span><span>Library Accessibility</span><span>Contact Librarian</span>
+            <p style={{ fontSize: "12px", color: "#aaa" }}>©Library Management System. Licensed Public Books.</p>
           </div>
         </footer>
       </main>

@@ -13,6 +13,7 @@ import DashboardOverview from "./pages/DashboardOverview.jsx";
 import ForgotPassword from "./pages/ForgotPassword.jsx";
 import UserDashboard from "./pages/UserDashboard.jsx";
 import Catalog from "./pages/Catalog";
+import BookDetails from "./pages/BookDetails";
 import Circulation from "./pages/Circulation";
 import Messages from "./pages/Messages";
 import Help from "./pages/Help";
@@ -28,8 +29,12 @@ const router = createBrowserRouter([
   { path: "/forgot-password", element: <ForgotPassword /> },
   { path: "/userdashboard", element: <UserDashboard /> },
   {
-    path: "/catalog", // ADD THIS
-    element: <Catalog />, // Ensure the file exists and is imported
+    path: "/catalog",
+    element: <Catalog />,
+  },
+  {
+    path: "/catalog/:id",
+    element: <BookDetails />,
   },
   { path: "/circulation", element: <Circulation /> },
   // 2. ADD THIS NEW PATH TARGET RIGHT HERE

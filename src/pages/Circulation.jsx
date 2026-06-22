@@ -292,12 +292,12 @@ export default function Circulation() {
                 fontWeight: "700",
                 cursor: "pointer",
               }}
-                                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = "#ad1f1f";
-                  }}
-                  onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = "#fb0000";
-                  }}
+              onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = "#ad1f1f";
+              }}
+              onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = "#fb0000";
+              }}
             >
               Delete History
             </button>
