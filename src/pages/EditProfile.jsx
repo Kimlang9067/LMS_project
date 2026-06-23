@@ -31,6 +31,33 @@ export default function EditProfile() {
       <div className="max-w-3xl mx-auto bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
         
         {/* Header */}
+          <header style={s.topbar}>
+          {!isEditing && (
+            <button 
+              onClick={() => navigate('/profile')} 
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                background: '#fff',
+                border: '1px solid #e0e0e0',
+                borderRadius: '8px',
+                padding: '8px 16px',
+                fontSize: '14px',
+                fontWeight: '600',
+                color: '#000',
+                cursor: 'pointer',
+                marginLeft: '16px',
+                marginTop: '8px',
+                boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06)'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.setProperty('background-color', '#cccccc', 'important')}
+              onMouseLeave={(e) => e.currentTarget.style.setProperty('background-color', '#ffffff', 'important')}
+            >
+              <span>←</span> Back
+            </button>
+          )}
+        </header>
         <div className="p-6 border-b border-slate-100">
           <h2 className="text-2xl font-bold text-slate-900">Edit Profile</h2>
           <p className="text-sm text-slate-500 mt-1">Manage your public library identity and account settings.</p>

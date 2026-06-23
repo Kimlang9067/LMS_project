@@ -46,7 +46,7 @@ export default function Circulation() {
   const addRecord = () => {
     if (!form.user || !form.book) return;
 
-    // 🌟 Enforce Payment block check
+    // Enforce Payment block check
     if (selectedBookMeta && !hasPaidFormBook) {
       alert(`This is a premium book! Please process and confirm the $${selectedBookMeta.price.toFixed(2)} payment first.`);
       return;
@@ -54,7 +54,10 @@ export default function Circulation() {
 
     const newRecord = {
       id: Date.now(),
-      ...form,
+      user: form.user,
+      book: form.book,
+      issueDate: form.issueDate || new Date().toLocaleDateString(), // Defaults to today if left blank
+      returnDate: "Pending Return", // 🌟 Shows up cleanly in the profile under "Currently Borrowed"
       status: "Borrowed",
     };
 
@@ -74,7 +77,7 @@ export default function Circulation() {
   const markReturned = (id) => {
     setRecords(
       records.map((r) =>
-        r.id === id ? { ...r, status: "Returned" } : r
+        r.id === id ? { ...r, status: "Returned", returnDate: new Date().toLocaleDateString() } : r
       )
     );
   };
@@ -375,28 +378,7 @@ export default function Circulation() {
                 </button>
               )}
 
-              <button
-                onClick={() => deleteRecord(r.id)}
-                style={{
-                  marginTop: "15px",
-                  width: "100%",
-                  padding: "12px",
-                  borderRadius: "25px",
-                  border: "none",
-                  backgroundColor: "#ff0000",
-                  color: "#fff",
-                  fontWeight: "700",
-                  cursor: "pointer",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = "#ad1f1f";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = "#ff0000";
-                }}
-              >
-                Delete History
-              </button>
+
             </div>
           ))}
         </div>

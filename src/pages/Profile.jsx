@@ -92,9 +92,25 @@ export default function Profile() {
     }
   }, [location.state]);
 
-  // 🌟 Dynamic lists separated explicitly by current workflow status
-  const activeLoans = circulationRecords.filter(item => item.status === "Borrowed");
-  const pastHistory = circulationRecords.filter(item => item.status === "Returned");
+  // 🌟 FILTERING CONDITIONAL INJECTIONS
+  
+  // 1. Currently Borrowed: Must be "Borrowed" AND current date must not have passed the deadline return date
+  const activeLoans = circulationRecords.filter(item => {
+    if (item.status !== "Borrowed") return false;
+    if (!item.returnDate) return true; // If no return date deadline is provided, default to keeping it visible
+
+    const deadlineDate = new Date(item.returnDate);
+    const today = new Date();
+
+    // Normalizing timestamps to pure days to avoid hour mismatch bugs
+    deadlineDate.setHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0);
+
+    return today <= deadlineDate; // Keeps item visible until today moves past the deadline
+  });
+
+  // 2. Borrowing History: Permanent record. Every single log is displayed here.
+  const pastHistory = circulationRecords;
 
   // Determine which list to show based on the active tab index
   const visibleRecords = activeTab === 0 ? activeLoans : pastHistory;
@@ -186,6 +202,8 @@ export default function Profile() {
                 marginTop: '8px',
                 boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06)'
               }}
+              onMouseEnter={(e) => e.currentTarget.style.setProperty('background-color', '#cccccc', 'important')}
+              onMouseLeave={(e) => e.currentTarget.style.setProperty('background-color', '#ffffff', 'important')}
             >
               <span>←</span> Back
             </button>
@@ -339,28 +357,31 @@ export default function Profile() {
                         </tr>
                       </thead>
                       <tbody>
-                        {visibleRecords.map((record, i) => (
-                          <tr key={record.id || i} style={{ backgroundColor: i % 2 === 0 ? '#fff' : '#f8f9ff' }}>
-                            <td style={s.td}>
-                              <div style={s.bookCell}>
-                                <div style={s.bookIcon}>📘</div>
-                                <div>
-                                  <p style={s.bookTitle}>{record.book}</p>
+                        {visibleRecords.map((record, i) => {
+                          const isExpired = record.returnDate && new Date() > new Date(record.returnDate);
+                          return (
+                            <tr key={record.id || i} style={{ backgroundColor: i % 2 === 0 ? '#fff' : '#f8f9ff' }}>
+                              <td style={s.td}>
+                                <div style={s.bookCell}>
+                                  <div style={s.bookIcon}>📘</div>
+                                  <div>
+                                    <p style={s.bookTitle}>{record.book}</p>
+                                  </div>
                                 </div>
-                              </div>
-                            </td>
-                            <td style={{ ...s.td, color: '#555', fontWeight: '600' }}>{record.user}</td>
-                            <td style={{ ...s.td, color: '#666' }}>{record.issueDate || 'N/A'}</td>
-                            <td style={{ ...s.td, fontWeight: '700', color: record.status === 'Borrowed' ? '#000' : '#16a34a' }}>
-                              {record.returnDate || 'N/A'}
-                            </td>
-                            <td style={s.td}>
-                              <span style={{ ...s.statusPill, ...(record.status === 'Borrowed' ? s.statusDue : s.statusActive) }}>
-                                {record.status === 'Borrowed' ? 'Active Loan' : 'Returned'}
-                              </span>
-                            </td>
-                          </tr>
-                        ))}
+                              </td>
+                              <td style={{ ...s.td, color: '#555', fontWeight: '600' }}>{record.user}</td>
+                              <td style={{ ...s.td, color: '#666' }}>{record.issueDate || 'N/A'}</td>
+                              <td style={{ ...s.td, fontWeight: '700', color: record.status === 'Borrowed' ? (isExpired ? '#ba1a1a' : '#000') : '#16a34a' }}>
+                                {record.returnDate || 'N/A'}
+                              </td>
+                              <td style={s.td}>
+                                <span style={{ ...s.statusPill, ...(record.status === 'Borrowed' ? (isExpired ? s.statusDue : { backgroundColor: 'rgba(59,130,246,0.1)', color: '#2563eb' }) : s.statusActive) }}>
+                                  {record.status === 'Borrowed' ? (isExpired ? 'Overdue Deadline' : 'Active Loan') : 'Returned'}
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>
@@ -444,7 +465,7 @@ export default function Profile() {
   );
 }
 
-// Keeping your precise styling structures...
+// Preserving precise styles...
 const flex = (dir = 'row', align = 'center', gap = 0) => ({ display: 'flex', flexDirection: dir, alignItems: align, gap });
 const card = { backgroundColor: '#fff', borderRadius: '24px', border: '1px solid #e5e5e5', padding: '24px', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' };
 
