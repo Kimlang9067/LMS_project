@@ -35,12 +35,6 @@ function LibraryBookLogo({ size = 110 }) {
   );
 }
 
-const books = [
-  { title: "The Structure of Scientific Revolutions", author: "Thomas S. Kuhn", loaned: "Oct 12, 2026", due: "Nov 12, 2026", status: "active" },
-  { title: "Foundations of Natural Language Processing", author: "Manning & Schütze", loaned: "Oct 20, 2026", due: "Nov 03, 2026", status: "due" },
-  { title: "Digital Humanities: A Survey", author: "Anne Burdick", loaned: "Oct 15, 2026", due: "Nov 15, 2026", status: "active" },
-];
-
 const activity = [
   { title: "Book Returned", desc: '"Semantics: Volume 1" was successfully returned to the Main Campus Library.', time: "2 Days Ago" },
   { title: "New Hold Placed", desc: 'Request for "Deep Learning" by Goodfellow is confirmed. Queue position: #2.', time: "4 Days Ago" },
@@ -56,9 +50,12 @@ export default function Profile() {
   const [emailNotif, setEmailNotif] = useState(true);
   const [autoRenew, setAutoRenew] = useState(false);
   
-  // Toggle layout switcher state
   const [isEditing, setIsEditing] = useState(false);
   const fileInputRef = React.useRef(null);
+  
+  // 🌟 Dynamic shared state from localStorage
+  const [circulationRecords, setCirculationRecords] = useState([]);
+
   const [user, setUser] = useState({
     fullName: "",
     email: "",
@@ -68,13 +65,13 @@ export default function Profile() {
     status: "Active Member"
   });
 
-  // Local form editing states
   const [editName, setEditName] = useState("");
   const [editEmail, setEditEmail] = useState("");
   const [editPhone, setEditPhone] = useState("");
   const [selectedImage, setSelectedImage] = useState(null);
 
   useEffect(() => {
+    // Load Account Context
     const stored = localStorage.getItem('userAccount');
     if (stored) {
       const parsedUser = JSON.parse(stored);
@@ -83,10 +80,24 @@ export default function Profile() {
       setEditEmail(parsedUser.email || "");
       setEditPhone(parsedUser.phone || "");
     }
-      if (location.state?.editing) {
-    setIsEditing(true);
+
+    // 🌟 Load live dynamic library actions from circulation data
+    const savedCirculation = localStorage.getItem("circulation");
+    if (savedCirculation) {
+      setCirculationRecords(JSON.parse(savedCirculation));
     }
-  }, []);
+
+    if (location.state?.editing) {
+      setIsEditing(true);
+    }
+  }, [location.state]);
+
+  // 🌟 Dynamic lists separated explicitly by current workflow status
+  const activeLoans = circulationRecords.filter(item => item.status === "Borrowed");
+  const pastHistory = circulationRecords.filter(item => item.status === "Returned");
+
+  // Determine which list to show based on the active tab index
+  const visibleRecords = activeTab === 0 ? activeLoans : pastHistory;
 
   const handleSaveProfile = (e) => {
     e.preventDefault();
@@ -102,7 +113,6 @@ export default function Profile() {
     alert("Profile settings updated successfully!");
   };
 
-  // Modern Sidebar Links updated to target path templates
   const navItems = [
     { label: "Profile", icon: "👤", active: !isEditing, action: () => { setIsEditing(false); navigate('/profile'); } },
     { label: "Edit Profile", icon: "⚙", active: isEditing, action: () => setIsEditing(true) },
@@ -114,7 +124,6 @@ export default function Profile() {
 
   return (
     <div style={s.app}>
-
       {/* SIDEBAR */}
       <aside style={s.sidebar}>
         <div>
@@ -156,33 +165,32 @@ export default function Profile() {
 
       {/* MAIN CONTAINER */}
       <main style={s.main}>
-
         {/* TOPBAR */}
         <header style={s.topbar}>
-  {!isEditing && (
-    <button 
-      onClick={() => navigate('/userdashboard')} 
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px',
-        background: '#fff',
-        border: '1px solid #e0e0e0',
-        borderRadius: '8px',
-        padding: '8px 16px',
-        fontSize: '14px',
-        fontWeight: '600',
-        color: '#000',
-        cursor: 'pointer',
-        marginLeft: '16px',
-        marginTop: '8px',
-        boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06)'
-      }}
-    >
-      <span>←</span> Back
-    </button>
-  )}
-</header>
+          {!isEditing && (
+            <button 
+              onClick={() => navigate('/userdashboard')} 
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                background: '#fff',
+                border: '1px solid #e0e0e0',
+                borderRadius: '8px',
+                padding: '8px 16px',
+                fontSize: '14px',
+                fontWeight: '600',
+                color: '#000',
+                cursor: 'pointer',
+                marginLeft: '16px',
+                marginTop: '8px',
+                boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06)'
+              }}
+            >
+              <span>←</span> Back
+            </button>
+          )}
+        </header>
 
         <div style={s.content}>
           {isEditing ? (
@@ -194,37 +202,39 @@ export default function Profile() {
               </div>
               
               <form onSubmit={handleSaveProfile} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-<div style={{ display: 'flex', alignItems: 'center', gap: '20px', paddingBottom: '20px', borderBottom: '1px solid #f0f0f0' }}>
-  <div style={s.avatarLarge}>{editName.charAt(0) || 'G'}</div>
-  
-  {/* ADD THIS HIDDEN INPUT */}
-  <input 
-    type="file" 
-    ref={fileInputRef} 
-    style={{ display: 'none' }} 
-    accept="image/*" 
-    onChange={(e) => {
-      const file = e.target.files[0];
-      if (file) {
-        // Create a local URL for the preview and save to state
-        const imageUrl = URL.createObjectURL(file);
-        setSelectedImage(imageUrl);
-      }
-    }}
-  />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '20px', paddingBottom: '20px', borderBottom: '1px solid #f0f0f0' }}>
+                  {selectedImage ? (
+                    <img src={selectedImage} alt="Avatar" style={{ ...s.avatarLarge, objectFit: 'cover' }} />
+                  ) : (
+                    <div style={s.avatarLarge}>{editName.charAt(0) || 'G'}</div>
+                  )}
+                  
+                  <input 
+                    type="file" 
+                    ref={fileInputRef} 
+                    style={{ display: 'none' }} 
+                    accept="image/*" 
+                    onChange={(e) => {
+                      const file = e.target.files[0];
+                      if (file) {
+                        const imageUrl = URL.createObjectURL(file);
+                        setSelectedImage(imageUrl);
+                      }
+                    }}
+                  />
 
-  {/* UPDATE THIS BUTTON TO TRIGGER THE INPUT */}
-  <div>
-    <button 
-      type="button" 
-      onClick={() => fileInputRef.current.click()} 
-      style={{ ...s.renewNowBtn, padding: '10px 16px' }}
-    >
-      Change Photo
-    </button>
-    <p style={{ fontSize: '11px', color: '#888', marginTop: '6px' }}>PNG or JPG up to 2MB.</p>
-  </div>
-</div>
+                  <div>
+                    <button 
+                      type="button" 
+                      onClick={() => fileInputRef.current.click()} 
+                      style={{ ...s.renewNowBtn, padding: '10px 16px' }}
+                    >
+                      Change Photo
+                    </button>
+                    <p style={{ fontSize: '11px', color: '#888', marginTop: '6px' }}>PNG or JPG up to 2MB.</p>
+                  </div>
+                </div>
+
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                   <div>
                     <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: '#666', marginBottom: '6px' }}>Full Name</label>
@@ -260,7 +270,11 @@ export default function Profile() {
               <div style={s.heroGrid}>
                 <div style={s.profileCard}>
                   <div style={s.avatarWrap}>
-                    <div style={s.avatarLarge}>{user.fullName?.charAt(0) || 'G'}</div>
+                    {selectedImage ? (
+                      <img src={selectedImage} alt="Avatar" style={{ ...s.avatarLarge, objectFit: 'cover' }} />
+                    ) : (
+                      <div style={s.avatarLarge}>{user.fullName?.charAt(0) || 'G'}</div>
+                    )}
                   </div>
                   <div style={s.profileInfo}>
                     <div style={s.profileNameRow}>
@@ -293,77 +307,70 @@ export default function Profile() {
                     </div>
                   </div>
                 </div>
-
-                {/* RIGHT STATS */}
-
               </div>
 
               {/* TABS BAR */}
               <div style={s.tabsBar}>
                 {tabs.map((tab, i) => (
                   <button key={tab} style={{ ...s.tabBtn, ...(activeTab === i ? s.tabBtnActive : {}) }} onClick={() => setActiveTab(i)}>
-                    {tab}
+                    {tab} ({i === 0 ? activeLoans.length : pastHistory.length})
                   </button>
                 ))}
               </div>
 
-              {/* TABLE CARD */}
-              {activeTab === 0 && (
-                <div style={s.tableCard}>
+              {/* DYNAMIC TABLE CARD */}
+              <div style={s.tableCard}>
+                {visibleRecords.length === 0 ? (
+                  <div style={{ padding: '40px', textAlign: 'center', color: '#666' }}>
+                    <p style={{ fontSize: '15px', fontWeight: '500' }}>
+                      No items found under "{tabs[activeTab]}".
+                    </p>
+                  </div>
+                ) : (
                   <div style={{ overflowX: 'auto' }}>
                     <table style={s.table}>
                       <thead>
                         <tr style={s.tableHead}>
                           <th style={s.th}>Book Details</th>
-                          <th style={s.th}>Loan Period</th>
-                          <th style={s.th}>Due Date</th>
+                          <th style={s.th}>Borrower</th>
+                          <th style={s.th}>Issue Date</th>
+                          <th style={s.th}>Due / Return Date</th>
                           <th style={s.th}>Status</th>
-                          <th style={{ ...s.th, textAlign: 'right' }}>Actions</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {books.map((book, i) => (
-                          <tr key={i} style={{ backgroundColor: i % 2 === 0 ? '#fff' : '#f8f9ff' }}>
+                        {visibleRecords.map((record, i) => (
+                          <tr key={record.id || i} style={{ backgroundColor: i % 2 === 0 ? '#fff' : '#f8f9ff' }}>
                             <td style={s.td}>
                               <div style={s.bookCell}>
-                                <div style={s.bookIcon}>📗</div>
+                                <div style={s.bookIcon}>📘</div>
                                 <div>
-                                  <p style={s.bookTitle}>{book.title}</p>
-                                  <p style={s.bookAuthor}>{book.author}</p>
+                                  <p style={s.bookTitle}>{record.book}</p>
                                 </div>
                               </div>
                             </td>
-                            <td style={{ ...s.td, color: '#666' }}>{book.loaned}</td>
-                            <td style={{ ...s.td, fontWeight: '700', color: book.status === 'due' ? '#ba1a1a' : '#000' }}>{book.due}</td>
-                            <td style={s.td}>
-                              <span style={{ ...s.statusPill, ...(book.status === 'due' ? s.statusDue : s.statusActive) }}>
-                                {book.status === 'due' ? 'Due Soon' : 'Active'}
-                              </span>
+                            <td style={{ ...s.td, color: '#555', fontWeight: '600' }}>{record.user}</td>
+                            <td style={{ ...s.td, color: '#666' }}>{record.issueDate || 'N/A'}</td>
+                            <td style={{ ...s.td, fontWeight: '700', color: record.status === 'Borrowed' ? '#000' : '#16a34a' }}>
+                              {record.returnDate || 'N/A'}
                             </td>
-                            <td style={{ ...s.td, textAlign: 'right' }}>
-                              {book.status === 'due' ? (
-                                <button style={s.renewNowBtn} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#808080'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#000'}>Renew Now</button>
-                              ) : (
-                                <button style={s.renewBtn} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f0f0f0'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>Renew</button>
-                              )}
+                            <td style={s.td}>
+                              <span style={{ ...s.statusPill, ...(record.status === 'Borrowed' ? s.statusDue : s.statusActive) }}>
+                                {record.status === 'Borrowed' ? 'Active Loan' : 'Returned'}
+                              </span>
                             </td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
                   </div>
-                  <div style={s.tableFooter}>
-                    <p style={{ fontSize: '12px', color: '#666' }}>Showing 3 of 4 active loans</p>
-                    <button style={s.viewAllBtn}>View Full Borrowing History →</button>
-                  </div>
+                )}
+                <div style={s.tableFooter}>
+                  <p style={{ fontSize: '12px', color: '#666' }}>
+                    Showing {visibleRecords.length} records
+                  </p>
                 </div>
-              )}
-
-              {activeTab !== 0 && (
-                <div style={{ ...s.tableCard, padding: '40px', textAlign: 'center', color: '#888' }}>
-                  <p style={{ fontSize: '16px' }}>This section is coming soon.</p>
-                </div>
-              )}
+              </div>
 
               {/* SETTINGS AND ACTIVITY */}
               <div style={s.bottomGrid}>
@@ -373,7 +380,6 @@ export default function Profile() {
                       <h3 style={s.bottomCardTitle}>Account Preferences</h3>
                       <p style={s.bottomCardSubtitle}>Manage your library interaction settings.</p>
                     </div>
-                    <div style={s.bottomCardIcon}>⚙</div>
                   </div>
                   <div style={s.prefItem}>
                     <div>
@@ -429,40 +435,22 @@ export default function Profile() {
           <div>
             <div style={{ fontWeight: '800', fontSize: '16px' }}>Data_Science Library</div>
             <p style={{ fontSize: '12px', color: '#8192a7', marginTop: '4px' }}>
-              © 2026 Library Management System. System Status: <span style={{ color: '#4ade80', fontWeight: '700' }}>Operational</span>
+              ©Library Management System. System Status: <span style={{ color: '#4ade80', fontWeight: '700' }}>Operational</span>
             </p>
           </div>
-          <div style={{ display: 'flex', gap: '24px', fontSize: '13px', flexWrap: 'wrap' }}>
-            <span style={s.footerLink}>Privacy Policy</span>
-            <span style={s.footerLink}>Terms of Service</span>
-            <span style={s.footerLink}>Support Center</span>
-          </div>
         </footer>
-
       </main>
     </div>
   );
 }
 
+// Keeping your precise styling structures...
 const flex = (dir = 'row', align = 'center', gap = 0) => ({ display: 'flex', flexDirection: dir, alignItems: align, gap });
 const card = { backgroundColor: '#fff', borderRadius: '24px', border: '1px solid #e5e5e5', padding: '24px', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' };
 
 const s = {
-  
   app: { ...flex('row', 'stretch'), minHeight: '100vh', fontFamily: 'system-ui, sans-serif', backgroundColor: '#f8f9ff' },
-
-  // SIDEBAR
-  backButton: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    background: 'transparent',
-    border: 'none',
-    fontSize: '14px',
-    fontWeight: '700',
-    color: '#000',
-    cursor: 'pointer',
-    padding: '8px 0',},
+  backButton: { display: 'flex', alignItems: 'center', gap: '8px', background: 'transparent', border: 'none', fontSize: '14px', fontWeight: '700', color: '#000', cursor: 'pointer', padding: '8px 0' },
   sidebar: { ...flex('column', 'stretch'), justifyContent: 'space-between', width: '220px', backgroundColor: '#000', color: '#fff', padding: '24px 16px', position: 'sticky', top: 0, height: '100vh' },
   sidebarBrand: { ...flex('row', 'center', 10), marginBottom: '30px', padding: '0 8px' },
   sidebarBrandTitle: { fontSize: '15px', fontWeight: '700' },
@@ -473,18 +461,13 @@ const s = {
   navIcon: { fontSize: '16px', width: '20px', textAlign: 'center' },
   sidebarFooter: { ...flex('column', 'stretch', 4) },
   logoutBtn: { display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '8px', fontSize: '14px', fontWeight: '700', color: '#ff6b6b', backgroundColor: 'rgba(186,26,26,0.1)', border: 'none', cursor: 'pointer', marginTop: '8px', transition: 'background-color .2s' },
-
-  // MAIN
   main: { flex: 1, ...flex('column', 'stretch') },
   topbar: { ...flex('row', 'center'), justifyContent: 'space-between', padding: '16px 32px', backgroundColor: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(16px)', borderBottom: '1px solid #e5e5e5', position: 'sticky', top: 0, zIndex: 40 },
   searchInput: { flex: 1, maxWidth: '400px', padding: '10px 16px', borderRadius: '20px', border: '1px solid #ddd', outline: 'none', fontSize: '13px', backgroundColor: '#eff4ff' },
   topbarRight: { ...flex('row', 'center', 16) },
   notifBtn: { fontSize: '20px', cursor: 'pointer' },
   avatarCircle: { width: '36px', height: '36px', borderRadius: '50%', backgroundColor: '#000', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', fontSize: '14px' },
-
   content: { padding: '40px', maxWidth: '1440px', margin: '0 auto', width: '100%', boxSizing: 'border-box' },
-
-  // HERO
   heroGrid: { display: 'grid', gridTemplateColumns: '1fr auto', gap: '24px', marginBottom: '40px', flexWrap: 'wrap' },
   profileCard: { ...card, ...flex('row', 'flex-start', 24), position: 'relative', overflow: 'hidden' },
   avatarWrap: { position: 'relative', flexShrink: 0 },
@@ -499,26 +482,9 @@ const s = {
   metaIcon: { width: '36px', height: '36px', borderRadius: '10px', backgroundColor: '#f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', flexShrink: 0 },
   metaLabel: { fontSize: '10px', fontWeight: '700', color: '#888', textTransform: 'uppercase', margin: '0 0 2px 0' },
   metaValue: { fontSize: '13px', fontWeight: '600', color: '#000', margin: 0 },
-
-  // STATS
-  statsCol: { ...flex('column', 'stretch', 16), minWidth: '260px' },
-  statsRow: { ...flex('row', 'stretch', 16) },
-  statCard: { ...card, flex: 1, ...flex('column', 'flex-start', 8), padding: '20px' },
-  statIcon: { width: '40px', height: '40px', borderRadius: '12px', backgroundColor: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', marginBottom: '8px' },
-  statNum: { fontSize: '40px', fontWeight: '800', margin: '0', color: '#fff', lineHeight: 1 },
-  statLabel: { fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: 'rgba(255,255,255,0.7)', margin: 0 },
-  balanceCard: { ...card, ...flex('row', 'center', 16) },
-  balanceIcon: { width: '48px', height: '48px', borderRadius: '50%', backgroundColor: 'rgba(74,222,128,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px' },
-  balanceLabel: { fontSize: '11px', fontWeight: '700', color: '#888', textTransform: 'uppercase', margin: '0 0 4px 0' },
-  balanceAmt: { fontSize: '22px', fontWeight: '800', color: '#000' },
-  balanceClear: { fontSize: '11px', fontWeight: '700', color: '#16a34a', textTransform: 'uppercase' },
-
-  // TABS
   tabsBar: { ...flex('row', 'center', 0), borderBottom: '1px solid #e5e5e5', marginBottom: '20px', overflowX: 'auto' },
   tabBtn: { padding: '12px 20px', fontSize: '14px', fontWeight: '600', color: '#666', backgroundColor: 'transparent', border: 'none', borderBottom: '2px solid transparent', cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all .2s' },
   tabBtnActive: { color: '#000', borderBottom: '2px solid #000' },
-
-  // TABLE
   tableCard: { ...card, padding: 0, overflow: 'hidden', marginBottom: '40px' },
   table: { width: '100%', borderCollapse: 'collapse', textAlign: 'left' },
   tableHead: { backgroundColor: '#eff4ff', borderBottom: '1px solid #e5e5e5' },
@@ -527,16 +493,12 @@ const s = {
   bookCell: { ...flex('row', 'center', 16) },
   bookIcon: { width: '40px', height: '52px', backgroundColor: '#f0f0f0', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', flexShrink: 0 },
   bookTitle: { fontSize: '14px', fontWeight: '700', color: '#000', margin: '0 0 4px 0' },
-  bookAuthor: { fontSize: '13px', color: '#666', margin: 0 },
   statusPill: { display: 'inline-block', padding: '4px 12px', borderRadius: '20px', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px' },
   statusActive: { backgroundColor: 'rgba(74,222,128,0.1)', color: '#16a34a' },
   statusDue: { backgroundColor: 'rgba(186,26,26,0.1)', color: '#ba1a1a' },
   renewBtn: { padding: '8px 16px', fontSize: '13px', fontWeight: '700', color: '#000', backgroundColor: 'transparent', border: 'none', borderRadius: '8px', cursor: 'pointer', transition: 'background-color .2s' },
   renewNowBtn: { padding: '8px 20px', fontSize: '13px', fontWeight: '700', color: '#fff', backgroundColor: '#000', border: 'none', borderRadius: '12px', cursor: 'pointer', transition: 'background-color .2s' },
   tableFooter: { ...flex('row', 'center'), justifyContent: 'space-between', padding: '16px 24px', backgroundColor: '#f8f9ff', borderTop: '1px solid #e5e5e5' },
-  viewAllBtn: { fontSize: '13px', fontWeight: '700', color: '#000', backgroundColor: 'transparent', border: 'none', cursor: 'pointer' },
-
-  // BOTTOM
   bottomGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginTop: '40px' },
   bottomCard: { ...card },
   bottomCardHeader: { ...flex('row', 'flex-start'), justifyContent: 'space-between', marginBottom: '24px' },
@@ -555,8 +517,6 @@ const s = {
   activityTitle: { fontSize: '14px', fontWeight: '700', color: '#000', margin: '0 0 4px 0' },
   activityDesc: { fontSize: '13px', color: '#666', lineHeight: '1.5', margin: '0 0 4px 0' },
   activityTime: { fontSize: '11px', color: '#aaa', fontWeight: '700', textTransform: 'uppercase', margin: 0 },
-
-  // FOOTER
   footer: { ...flex('row', 'center'), justifyContent: 'space-between', flexWrap: 'wrap', gap: '20px', backgroundColor: '#000', color: '#fff', padding: '30px 40px', marginTop: 'auto' },
   footerLink: { color: '#8192a7', cursor: 'pointer', fontSize: '13px' },
   logoWrap: { display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
@@ -565,5 +525,4 @@ const s = {
   brandTitle: { fontSize: '18px', fontWeight: '700', margin: '0', color: '#ffffff', lineHeight: '1.2' },
   brandSubtitle: { fontSize: '15px', color: '#ff3b30', margin: '4px 0 8px 0', lineHeight: '1.2' },
   brandTagline: { fontSize: '13px', color: '#d7e3f1', margin: 0 },
-  
 };
