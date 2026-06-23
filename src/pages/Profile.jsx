@@ -1,5 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router';
+import {
+  getCirculationRecords,
+  processExpiredLoans,
+  getActiveLoans,
+  getBorrowingHistory,
+} from '../utils/circulation';
+import {
+  notifyProfileUpdated,
+  checkReturnReminders,
+} from '../utils/notifications';
 
 function LibraryBookLogo({ size = 110 }) {
   return (
@@ -71,7 +81,6 @@ export default function Profile() {
   const [selectedImage, setSelectedImage] = useState(null);
 
   useEffect(() => {
-    // Load Account Context
     const stored = localStorage.getItem('userAccount');
     if (stored) {
       const parsedUser = JSON.parse(stored);
@@ -79,12 +88,16 @@ export default function Profile() {
       setEditName(parsedUser.fullName || "");
       setEditEmail(parsedUser.email || "");
       setEditPhone(parsedUser.phone || "");
-    }
+      if (parsedUser.profilePicture) {
+        setSelectedImage(parsedUser.profilePicture);
+      }
 
-    // 🌟 Load live dynamic library actions from circulation data
-    const savedCirculation = localStorage.getItem("circulation");
-    if (savedCirculation) {
-      setCirculationRecords(JSON.parse(savedCirculation));
+      const processed = processExpiredLoans(getCirculationRecords());
+      const userName = parsedUser.fullName || parsedUser.username;
+      checkReturnReminders(processed, userName);
+      setCirculationRecords(processed);
+    } else {
+      setCirculationRecords(processExpiredLoans(getCirculationRecords()));
     }
 
     if (location.state?.editing) {
@@ -92,25 +105,11 @@ export default function Profile() {
     }
   }, [location.state]);
 
-  // 🌟 FILTERING CONDITIONAL INJECTIONS
-  
-  // 1. Currently Borrowed: Must be "Borrowed" AND current date must not have passed the deadline return date
-  const activeLoans = circulationRecords.filter(item => {
-    if (item.status !== "Borrowed") return false;
-    if (!item.returnDate) return true; // If no return date deadline is provided, default to keeping it visible
+  const userName = user.fullName || user.username;
+  const userRecords = circulationRecords.filter((r) => r.user === userName);
 
-    const deadlineDate = new Date(item.returnDate);
-    const today = new Date();
-
-    // Normalizing timestamps to pure days to avoid hour mismatch bugs
-    deadlineDate.setHours(0, 0, 0, 0);
-    today.setHours(0, 0, 0, 0);
-
-    return today <= deadlineDate; // Keeps item visible until today moves past the deadline
-  });
-
-  // 2. Borrowing History: Permanent record. Every single log is displayed here.
-  const pastHistory = circulationRecords;
+  const activeLoans = getActiveLoans(userRecords);
+  const pastHistory = getBorrowingHistory(userRecords);
 
   // Determine which list to show based on the active tab index
   const visibleRecords = activeTab === 0 ? activeLoans : pastHistory;
@@ -121,12 +120,26 @@ export default function Profile() {
       ...user,
       fullName: editName,
       email: editEmail,
-      phone: editPhone
+      phone: editPhone,
+      ...(selectedImage ? { profilePicture: selectedImage } : {}),
     };
     setUser(updatedUser);
     localStorage.setItem('userAccount', JSON.stringify(updatedUser));
     setIsEditing(false);
+    notifyProfileUpdated();
     alert("Profile settings updated successfully!");
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      alert("Image must be 2MB or smaller.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => setSelectedImage(reader.result);
+    reader.readAsDataURL(file);
   };
 
   const navItems = [
@@ -232,13 +245,7 @@ export default function Profile() {
                     ref={fileInputRef} 
                     style={{ display: 'none' }} 
                     accept="image/*" 
-                    onChange={(e) => {
-                      const file = e.target.files[0];
-                      if (file) {
-                        const imageUrl = URL.createObjectURL(file);
-                        setSelectedImage(imageUrl);
-                      }
-                    }}
+                    onChange={handleImageChange}
                   />
 
                   <div>
@@ -375,8 +382,8 @@ export default function Profile() {
                                 {record.returnDate || 'N/A'}
                               </td>
                               <td style={s.td}>
-                                <span style={{ ...s.statusPill, ...(record.status === 'Borrowed' ? (isExpired ? s.statusDue : { backgroundColor: 'rgba(59,130,246,0.1)', color: '#2563eb' }) : s.statusActive) }}>
-                                  {record.status === 'Borrowed' ? (isExpired ? 'Overdue Deadline' : 'Active Loan') : 'Returned'}
+                                <span style={{ ...s.statusPill, ...(record.status === 'Borrowed' ? (isExpired ? s.statusDue : { backgroundColor: 'rgba(59,130,246,0.1)', color: '#2563eb' }) : record.status === 'Overdue' ? s.statusDue : s.statusActive) }}>
+                                  {record.status === 'Borrowed' ? (isExpired ? 'Overdue Deadline' : 'Active Loan') : record.status === 'Overdue' ? 'Past Deadline' : 'Returned'}
                                 </span>
                               </td>
                             </tr>

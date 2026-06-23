@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { notifyLogin } from '../utils/notifications';
 
 function LibraryBookLogo({ size = 110 }) {
   return (
@@ -118,6 +119,8 @@ export default function SignIn({ userAccount, setUserAccount }) {
       }
 
       alert('Log in successful! Redirecting to your profile!');
+
+      notifyLogin(savedAccount.fullName || savedAccount.username);
 
       // 3. Update the global state so your navbar switches immediately!
       if (typeof setUserAccount === 'function') {

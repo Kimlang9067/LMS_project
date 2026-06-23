@@ -1,5 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
+import {
+  getMessagesWithFormattedTime,
+  markMessageRead,
+  markAllMessagesRead,
+} from '../utils/notifications';
 
 function LibraryBookLogo({ size = 110 }) {
   return (
@@ -31,81 +36,43 @@ function LibraryBookLogo({ size = 110 }) {
   );
 }
 
-const allMessages = [
-  {
-    id: 1,
-    icon: '📚',
-    title: 'Book Return Reminder',
-    body: 'Your borrowed book "Clean Code" is due in 3 days. Please return or renew it before the due date to avoid late fees.',
-    time: '2 hours ago',
-    tag: 'Reminder',
-    read: false,
-  },
-  {
-    id: 2,
-    icon: '✅',
-    title: 'Membership Renewed',
-    body: 'Your library membership has been renewed successfully. You now have access to all resources until December 2026.',
-    time: 'Yesterday',
-    tag: 'Account',
-    read: true,
-  },
-  {
-    id: 3,
-    icon: '🔔',
-    title: 'New Book Available',
-    body: 'A book on your wishlist, "Designing Data-Intensive Applications", is now available for borrowing.',
-    time: '3 days ago',
-    tag: 'Library',
-    read: true,
-  },
-  {
-    id: 4,
-    icon: '⚠️',
-    title: 'Overdue Notice',
-    body: '"Foundations of NLP" is now overdue. A fine of $0.25/day is being applied. Please return or contact the library.',
-    time: '5 days ago',
-    tag: 'Alert',
-    read: false,
-  },
-];
+const tagColors = {
+    Reminder: { bg: 'rgba(249,115,22,0.1)', color: '#c2410c' },
+    Account:  { bg: 'rgba(74,222,128,0.1)',  color: '#15803d' },
+    Library:  { bg: 'rgba(99,102,241,0.1)',  color: '#4338ca' },
+    Alert:    { bg: 'rgba(186,26,26,0.1)',   color: '#ba1a1a' },
+  };
 
 export default function Messages() {
   const navigate = useNavigate();
-  const [messages, setMessages] = useState(allMessages);
-const [filter, setFilter] = useState('All');
+  const [messages, setMessages] = useState(() => getMessagesWithFormattedTime());
+  const [filter, setFilter] = useState('All');
 
-const unreadCount = messages.filter((m) => !m.read).length;
+  const unreadCount = messages.filter((m) => !m.read).length;
 
-useEffect(() => {
-  localStorage.setItem('unreadCount', unreadCount);
-}, [unreadCount]);
+  useEffect(() => {
+    localStorage.setItem('unreadCount', unreadCount);
+  }, [unreadCount]);
+
   const filtered = filter === 'Unread' ? messages.filter((m) => !m.read) : messages;
 
-const markRead = (id) => {
-  const updated = messages.map((m) => m.id === id ? { ...m, read: true } : m);
-  setMessages(updated);
-  localStorage.setItem('unreadCount', updated.filter((m) => !m.read).length);
-};
+  const markRead = (id) => {
+    const updated = markMessageRead(id);
+    setMessages(getMessagesWithFormattedTime());
+    localStorage.setItem('unreadCount', updated.filter((m) => !m.read).length);
+  };
 
-const markAllRead = () => {
-  const updated = messages.map((m) => ({ ...m, read: true }));
-  setMessages(updated);
-  localStorage.setItem('unreadCount', 0);
-};
+  const markAllRead = () => {
+    markAllMessagesRead();
+    setMessages(getMessagesWithFormattedTime());
+    localStorage.setItem('unreadCount', 0);
+  };
 
   const navItems = [
     { label: 'Profile', icon: '👤', action: () => navigate('/profile') },
     { label: 'Edit Profile', icon: '⚙', action: () => navigate('/profile', { state: { editing: true } }) },
     { label: 'Messages', icon: '✉', active: true, action: () => {} },
   ];
-
-  const tagColors = {
-    Reminder: { bg: 'rgba(249,115,22,0.1)', color: '#c2410c' },
-    Account:  { bg: 'rgba(74,222,128,0.1)',  color: '#15803d' },
-    Library:  { bg: 'rgba(99,102,241,0.1)',  color: '#4338ca' },
-    Alert:    { bg: 'rgba(186,26,26,0.1)',   color: '#ba1a1a' },
-  };
 
   return (
     <div style={s.app}>

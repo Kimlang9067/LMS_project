@@ -1,30 +1,36 @@
 import React, { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import Home from "./Home";
-import { resources } from "../data/Resources";
-import { getEnrichedResources } from "../data/bookMeta"; // 🌟 Import enrichment lookup
+import { getEnrichedResources } from "../data/bookMeta";
+import {
+  getCirculationRecords,
+  saveCirculationRecords,
+  getCurrentBorrowerName,
+  processExpiredLoans,
+} from "../utils/circulation";
+import { notifyBookBorrowed } from "../utils/notifications";
 
 export default function Circulation() {
-  const [showDropdown, setShowDropdown] = useState(false);
+  const location = useLocation();
   const user = JSON.parse(localStorage.getItem("userAccount"));
-  
-  // Load local circulation files
-  const [records, setRecords] = useState(() => {
-    const saved = localStorage.getItem("circulation");
-    return saved ? JSON.parse(saved) : [];
-  });
+  const borrowerName = getCurrentBorrowerName();
+
+  const [records, setRecords] = useState(() =>
+    processExpiredLoans(getCirculationRecords())
+  );
+
+  const prefillBook = location.state?.bookTitle || "";
 
   const [form, setForm] = useState({
-    user: "",
-    book: "",
+    book: prefillBook,
     issueDate: "",
     returnDate: "",
   });
 
-  // 🌟 Track dynamic payment states within the manual entry form
   const [selectedBookMeta, setSelectedBookMeta] = useState(null);
   const [hasPaidFormBook, setHasPaidFormBook] = useState(false);
+  const bookLocked = Boolean(prefillBook);
 
-  // Check if the book needs payment whenever the text input changes or matches
   useEffect(() => {
     const enrichedList = getEnrichedResources();
     const matchedBook = enrichedList.find(
@@ -35,7 +41,7 @@ export default function Circulation() {
       setSelectedBookMeta(matchedBook);
     } else {
       setSelectedBookMeta(null);
-      setHasPaidFormBook(false); // Reset if changed to a free title
+      setHasPaidFormBook(false);
     }
   }, [form.book]);
 
@@ -44,55 +50,58 @@ export default function Circulation() {
   };
 
   const addRecord = () => {
-    if (!form.user || !form.book) return;
+    if (!form.book) return;
 
-    // Enforce Payment block check
     if (selectedBookMeta && !hasPaidFormBook) {
-      alert(`This is a premium book! Please process and confirm the $${selectedBookMeta.price.toFixed(2)} payment first.`);
+      alert(
+        `This is a premium book! Please process and confirm the $${selectedBookMeta.price.toFixed(2)} payment first.`
+      );
       return;
     }
 
+    const today = new Date();
+    const returnDate = form.returnDate
+      ? form.returnDate
+      : (() => {
+          const d = new Date(today);
+          d.setDate(d.getDate() + 14);
+          return d.toISOString().slice(0, 10);
+        })();
+
     const newRecord = {
       id: Date.now(),
-      user: form.user,
+      user: borrowerName,
       book: form.book,
-      issueDate: form.issueDate || new Date().toLocaleDateString(), // Defaults to today if left blank
-      returnDate: "Pending Return", // 🌟 Shows up cleanly in the profile under "Currently Borrowed"
+      issueDate: form.issueDate || today.toISOString().slice(0, 10),
+      returnDate,
       status: "Borrowed",
     };
 
-    setRecords([...records, newRecord]);
+    const updated = [...records, newRecord];
+    setRecords(updated);
+    saveCirculationRecords(updated);
+    notifyBookBorrowed(form.book, returnDate);
 
-    // Reset Form & Payment Conditions
-    setForm({
-      user: "",
-      book: "",
-      issueDate: "",
-      returnDate: "",
-    });
+    setForm({ book: prefillBook, issueDate: "", returnDate: "" });
     setHasPaidFormBook(false);
     setSelectedBookMeta(null);
   };
 
   const markReturned = (id) => {
-    setRecords(
-      records.map((r) =>
-        r.id === id ? { ...r, status: "Returned", returnDate: new Date().toLocaleDateString() } : r
-      )
+    const updated = records.map((r) =>
+      r.id === id
+        ? { ...r, status: "Returned", returnDate: new Date().toISOString().slice(0, 10) }
+        : r
     );
-  };
-
-  const deleteRecord = (id) => {
-    const updated = records.filter((r) => r.id !== id);
     setRecords(updated);
+    saveCirculationRecords(updated);
   };
 
   useEffect(() => {
-    localStorage.setItem("circulation", JSON.stringify(records));
+    saveCirculationRecords(records);
   }, [records]);
 
-  // Is submission blocked by payment verification rules?
-  const isBorrowDisabled = selectedBookMeta && !hasPaidFormBook;
+  const isBorrowDisabled = !form.book || (selectedBookMeta && !hasPaidFormBook);
 
   return (
     <Home isLoggedIn={true} user={user}>
@@ -108,7 +117,6 @@ export default function Circulation() {
           Manage borrowed books, issue records, and returns.
         </p>
 
-        {/* INPUT CONTROL FORM */}
         <div
           style={{
             backgroundColor: "#fff",
@@ -125,101 +133,123 @@ export default function Circulation() {
               gap: "15px",
             }}
           >
-            <input
-              name="user"
-              placeholder="User name"
-              value={form.user}
-              onChange={handleChange}
-              style={{
-                padding: "12px",
-                borderRadius: "12px",
-                border: "1px solid #ddd",
-              }}
-            />
-
-            <div style={{ position: "relative" }}>
-              <input
-                name="book"
-                placeholder="Book title"
-                value={form.book}
-                onChange={(e) => {
-                  setForm({ ...form, book: e.target.value });
-                  setShowDropdown(true);
+            <div>
+              <label
+                style={{
+                  display: "block",
+                  fontSize: "11px",
+                  fontWeight: "700",
+                  color: "#666",
+                  marginBottom: "6px",
+                  textTransform: "uppercase",
                 }}
-                onFocus={() => setShowDropdown(true)}
+              >
+                Borrower
+              </label>
+              <input
+                value={borrowerName}
+                readOnly
                 style={{
                   padding: "12px",
                   borderRadius: "12px",
                   border: "1px solid #ddd",
-                  width: "91.5%",
+                  width: "100%",
+                  boxSizing: "border-box",
+                  backgroundColor: "#f5f5f5",
+                  color: "#333",
+                  fontWeight: "600",
                 }}
               />
-
-              {showDropdown && form.book && (
-                <div
-                  style={{
-                    position: "absolute",
-                    top: "45px",
-                    left: 0,
-                    right: 0,
-                    maxHeight: "200px",
-                    overflowY: "auto",
-                    backgroundColor: "#fff",
-                    border: "1px solid #ddd",
-                    borderRadius: "10px",
-                    zIndex: 999,
-                  }}
-                >
-                  {resources
-                    .filter((b) =>
-                      b.title.toLowerCase().includes(form.book.toLowerCase())
-                    )
-                    .slice(0, 8)
-                    .map((b) => (
-                      <div
-                        key={b.id}
-                        onClick={() => {
-                          setForm({ ...form, book: b.title });
-                          setShowDropdown(false);
-                        }}
-                        style={{
-                          padding: "10px",
-                          cursor: "pointer",
-                        }}
-                      >
-                        📘 {b.title}
-                      </div>
-                    ))}
-                </div>
-              )}
             </div>
 
-            <input
-              type="date"
-              name="issueDate"
-              value={form.issueDate}
-              onChange={handleChange}
-              style={{
-                padding: "12px",
-                borderRadius: "12px",
-                border: "1px solid #ddd",
-              }}
-            />
+            <div>
+              <label
+                style={{
+                  display: "block",
+                  fontSize: "11px",
+                  fontWeight: "700",
+                  color: "#666",
+                  marginBottom: "6px",
+                  textTransform: "uppercase",
+                }}
+              >
+                Book Title
+              </label>
+              <input
+                name="book"
+                placeholder="Book title"
+                value={form.book}
+                onChange={handleChange}
+                readOnly={bookLocked}
+                style={{
+                  padding: "12px",
+                  borderRadius: "12px",
+                  border: "1px solid #ddd",
+                  width: "100%",
+                  boxSizing: "border-box",
+                  backgroundColor: bookLocked ? "#f5f5f5" : "#fff",
+                  fontWeight: bookLocked ? "600" : "normal",
+                }}
+              />
+            </div>
 
-            <input
-              type="date"
-              name="returnDate"
-              value={form.returnDate}
-              onChange={handleChange}
-              style={{
-                padding: "12px",
-                borderRadius: "12px",
-                border: "1px solid #ddd",
-              }}
-            />
+            <div>
+              <label
+                style={{
+                  display: "block",
+                  fontSize: "11px",
+                  fontWeight: "700",
+                  color: "#666",
+                  marginBottom: "6px",
+                  textTransform: "uppercase",
+                }}
+              >
+                Issue Date
+              </label>
+              <input
+                type="date"
+                name="issueDate"
+                value={form.issueDate}
+                onChange={handleChange}
+                style={{
+                  padding: "12px",
+                  borderRadius: "12px",
+                  border: "1px solid #ddd",
+                  width: "100%",
+                  boxSizing: "border-box",
+                }}
+              />
+            </div>
+
+            <div>
+              <label
+                style={{
+                  display: "block",
+                  fontSize: "11px",
+                  fontWeight: "700",
+                  color: "#666",
+                  marginBottom: "6px",
+                  textTransform: "uppercase",
+                }}
+              >
+                Return Date
+              </label>
+              <input
+                type="date"
+                name="returnDate"
+                value={form.returnDate}
+                onChange={handleChange}
+                style={{
+                  padding: "12px",
+                  borderRadius: "12px",
+                  border: "1px solid #ddd",
+                  width: "100%",
+                  boxSizing: "border-box",
+                }}
+              />
+            </div>
           </div>
 
-          {/* 🌟 DYNAMIC QR CODE DISPLAY ZONE FOR PREMIUM ENTRIES */}
           {selectedBookMeta && !hasPaidFormBook && (
             <div
               style={{
@@ -232,22 +262,22 @@ export default function Circulation() {
               }}
             >
               <h4 style={{ color: "#b45309", marginBottom: "6px", fontWeight: "700" }}>
-                Premium Resource Flagged: Paid borrow · ${selectedBookMeta.price.toFixed(2)}
+                Premium Resource: Paid borrow · ${selectedBookMeta.price.toFixed(2)}
               </h4>
               <p style={{ fontSize: "13px", color: "#666", marginBottom: "12px" }}>
-                Scan the vendor code below before checking this book out to history.
+                Scan the vendor code below before checking this book out.
               </p>
               <img
                 src={selectedBookMeta.qrCode}
                 alt="Payment QR Code"
                 style={{
-                      width: "100%",
-                      maxWidth: "380px",
-                      height: "auto",
-                      objectFit: "contain",
-                      borderRadius: "12px",
-                      border: "1px solid #e5e5e5",
-                      marginBottom: "50px",
+                  width: "100%",
+                  maxWidth: "380px",
+                  height: "auto",
+                  objectFit: "contain",
+                  borderRadius: "12px",
+                  border: "1px solid #e5e5e5",
+                  marginBottom: "20px",
                 }}
               />
               <br />
@@ -262,7 +292,6 @@ export default function Circulation() {
                   borderRadius: "15px",
                   fontWeight: "600",
                   cursor: "pointer",
-                  
                 }}
               >
                 Confirm Payment
@@ -270,7 +299,6 @@ export default function Circulation() {
             </div>
           )}
 
-          {/* 🌟 PAYMENT NOTIFICATION FEEDBACK */}
           {selectedBookMeta && hasPaidFormBook && (
             <div
               style={{
@@ -303,18 +331,11 @@ export default function Circulation() {
               fontWeight: "700",
               cursor: isBorrowDisabled ? "not-allowed" : "pointer",
             }}
-            onMouseEnter={(e) => {
-              if (!isBorrowDisabled) e.currentTarget.style.backgroundColor = "#8c8c8c";
-            }}
-            onMouseLeave={(e) => {
-              if (!isBorrowDisabled) e.currentTarget.style.backgroundColor = "#000000";
-            }}
           >
             Borrow Book
           </button>
         </div>
 
-        {/* LOG RECORD DISPLAY CARDS */}
         <div
           style={{
             display: "grid",
@@ -330,11 +351,10 @@ export default function Circulation() {
                 borderRadius: "16px",
                 border: "1px solid #e5e5e5",
                 padding: "20px",
-                disabled: "flex",
               }}
             >
-              <h3>📘 Book title: {r.book}</h3>
-              <p>👤 User Name: {r.user}</p>
+              <h3>📘 {r.book}</h3>
+              <p>👤 {r.user}</p>
               <p>📅 Issue: {r.issueDate}</p>
               <p>📅 Return: {r.returnDate}</p>
 
@@ -345,15 +365,25 @@ export default function Circulation() {
                     borderRadius: "20px",
                     fontSize: "12px",
                     fontWeight: "700",
-                    backgroundColor: r.status === "Borrowed" ? "#fee2e2" : "#dcfce7",
-                    color: r.status === "Borrowed" ? "#dc2626" : "#15803d",
+                    backgroundColor:
+                      r.status === "Borrowed"
+                        ? "#fee2e2"
+                        : r.status === "Overdue"
+                          ? "#fef3c7"
+                          : "#dcfce7",
+                    color:
+                      r.status === "Borrowed"
+                        ? "#dc2626"
+                        : r.status === "Overdue"
+                          ? "#b45309"
+                          : "#15803d",
                   }}
                 >
                   {r.status}
                 </span>
               </div>
 
-              {r.status === "Borrowed" && (
+              {(r.status === "Borrowed" || r.status === "Overdue") && (
                 <button
                   onClick={() => markReturned(r.id)}
                   style={{
@@ -367,18 +397,10 @@ export default function Circulation() {
                     fontWeight: "700",
                     cursor: "pointer",
                   }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = "#8c8c8c";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = "#000000";
-                  }}
                 >
                   Mark Returned
                 </button>
               )}
-
-
             </div>
           ))}
         </div>

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router';
+import { notifyPasswordUpdated } from '../utils/notifications';
 
 export default function ResetPassword() {
   const [newPassword, setNewPassword] = useState('');
@@ -12,6 +13,7 @@ export default function ResetPassword() {
       alert("Passwords do not match!");
       return;
     }
+    notifyPasswordUpdated();
     alert('Your password has been reset successfully!');
     navigate('/signin'); 
   };

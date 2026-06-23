@@ -12,8 +12,9 @@ import Register from "./pages/Register.jsx";
 import DashboardOverview from "./pages/DashboardOverview.jsx";
 import ForgotPassword from "./pages/ForgotPassword.jsx";
 import UserDashboard from "./pages/UserDashboard.jsx";
-import Catalog from "./pages/Catalog";
+import Catalog, { CatalogGrid } from "./pages/Catalog";
 import BookDetails from "./pages/BookDetails";
+import ResetPassword from "./pages/ResetPassword.jsx";
 import Circulation from "./pages/Circulation";
 import Messages from "./pages/Messages";
 import Help from "./pages/Help";
@@ -27,14 +28,15 @@ const router = createBrowserRouter([
   { path: "/signin", element: <SignIn /> },
   { path: "/register", element: <Register /> },
   { path: "/forgot-password", element: <ForgotPassword /> },
+  { path: "/reset-password", element: <ResetPassword /> },
   { path: "/userdashboard", element: <UserDashboard /> },
   {
     path: "/catalog",
     element: <Catalog />,
-  },
-  {
-    path: "/catalog/:id",
-    element: <BookDetails />,
+    children: [
+      { index: true, element: <CatalogGrid /> },
+      { path: ":id", element: <BookDetails /> },
+    ],
   },
   { path: "/circulation", element: <Circulation /> },
   // 2. ADD THIS NEW PATH TARGET RIGHT HERE
