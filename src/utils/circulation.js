@@ -55,5 +55,9 @@ export function addCirculationRecord(record) {
 
 export function getCurrentBorrowerName() {
   const user = JSON.parse(localStorage.getItem("userAccount") || "null");
-  return user?.fullName || user?.username || "Guest";
+  if (user?.fullName || user?.username) {
+    return user.fullName || user.username;
+  }
+  const session = JSON.parse(localStorage.getItem("currentSession") || "null");
+  return session?.fullName || session?.username || "Guest";
 }

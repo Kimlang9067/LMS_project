@@ -1,5 +1,6 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { getCurrentUser, getRoleLabel, isLoggedIn, getDashboardPath, ROLES } from "../utils/auth";
 
 function LibraryBookLogo({ size = 110 }) {
   return (
@@ -61,7 +62,11 @@ const hours = [
 ];
 
 export default function Home(props) {
-  const { isLoggedIn = false, user = null, sidebarExtension = null, children = null, showNav = true,} = props;
+  const { sidebarExtension = null, children = null, showNav = true } = props;
+  const sessionUser = getCurrentUser();
+  const loggedIn = isLoggedIn();
+  const user = props.user || sessionUser;
+  const isLoggedInProp = props.isLoggedIn ?? loggedIn;
   const navigate = useNavigate();
   const currentPath = window.location.pathname;
   const isHomePage = currentPath === "/";
@@ -95,7 +100,11 @@ export default function Home(props) {
                   let targetPath = `/${item.label.toLowerCase()}`;
 
                   if (item.label === "Dashboard") {
-                    targetPath = isLoggedIn ? "/userdashboard" : "/";
+                    if (isLoggedInProp && user?.role) {
+                      targetPath = getDashboardPath(user.role);
+                    } else {
+                      targetPath = "/";
+                    }
                   }
 
                   if (item.label === "Help") {
@@ -185,9 +194,10 @@ export default function Home(props) {
 
         {/* RIGHT SIDE: LOGIN / USER */}
         <div style={{ display: "flex", alignItems: "center", gap: "16px", marginLeft: "auto" }}>
-          {isLoggedIn ? (
+          {isLoggedInProp ? (
             <>
               {/* NOTIFICATION BELL */}
+              {(!user?.role || user.role === ROLES.MEMBER) && (
               <div
                 onClick={() => navigate("/messages")}
                 style={{
@@ -230,10 +240,17 @@ export default function Home(props) {
                   </div>
                 )}
               </div>
+              )}
 
               {/* PROFILE */}
               <div
-                onClick={() => navigate("/profile")}
+                onClick={() => {
+                  if (user?.role && user.role !== ROLES.MEMBER) {
+                    navigate(getDashboardPath(user.role));
+                  } else {
+                    navigate("/profile");
+                  }
+                }}
                 style={{
                   display: "flex",
                   alignItems: "center",
@@ -253,7 +270,7 @@ export default function Home(props) {
                     {user?.fullName || "User"}
                   </div>
                   <div style={{ fontSize: "12px", color: "#aaa" }}>
-                    Library Member
+                    {getRoleLabel(user?.role)}
                   </div>
                 </div>
                 <div

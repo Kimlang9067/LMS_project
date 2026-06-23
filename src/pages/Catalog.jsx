@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate, Outlet, useParams } from "react-router-dom";
 import Home from "./Home";
+import { getCurrentUser } from "../utils/auth";
 import { getEnrichedResources } from "../data/bookMeta";
 
 function CatalogGrid() {
@@ -121,7 +122,7 @@ function CatalogGrid() {
 }
 
 export default function Catalog() {
-  const user = JSON.parse(localStorage.getItem("userAccount"));
+  const user = getCurrentUser();
   const { id } = useParams();
   const isDetailView = Boolean(id);
 

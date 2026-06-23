@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router';
+import { logout } from '../utils/auth';
 import {
   getCirculationRecords,
   processExpiredLoans,
@@ -183,7 +184,7 @@ export default function Profile() {
         <div style={s.sidebarFooter}>
           <button
             style={s.logoutBtn}
-            onClick={() => navigate('/signin')}
+            onClick={() => { logout(); navigate('/signin'); }}
             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(186,26,26,0.2)'}
             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(186,26,26,0.1)'}
           >

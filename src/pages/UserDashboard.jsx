@@ -1,11 +1,9 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom'; // 1. Import useNavigate
 import Home from './Home';
+import { getCurrentUser } from '../utils/auth';
 
 export default function UserDashboard() {
-  const navigate = useNavigate(); // 2. Initialize the navigation hook
-  
-  const user = JSON.parse(localStorage.getItem("userAccount"));
+  const user = getCurrentUser();
 
   const s = {
     navItem: {
@@ -42,7 +40,7 @@ export default function UserDashboard() {
   return (
     <Home 
       isLoggedIn={!!user} 
-      user={user} 
+      user={user}
       sidebarExtension={dashboardSidebarItems} 
       showNav={true}
     />

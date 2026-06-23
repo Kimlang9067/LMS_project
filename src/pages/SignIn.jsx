@@ -1,6 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { notifyLogin } from '../utils/notifications';
+import {
+  login,
+  ROLE_OPTIONS,
+  ROLES,
+  initStaffAccounts,
+  DEFAULT_STAFF_ACCOUNTS,
+} from '../utils/auth';
 
 function LibraryBookLogo({ size = 110 }) {
   return (
@@ -61,9 +68,14 @@ export default function SignIn({ userAccount, setUserAccount }) {
   const [memberId, setMemberId] = useState('');
   const [password, setPassword] = useState('');
   const [remember, setRemember] = useState(false);
+  const [selectedRole, setSelectedRole] = useState(ROLES.MEMBER);
 
   const navigate = useNavigate();
   const formRef = useRef(null);
+
+  useEffect(() => {
+    initStaffAccounts();
+  }, []);
 
   useEffect(() => {
     const clearForm = () => {
@@ -104,32 +116,25 @@ export default function SignIn({ userAccount, setUserAccount }) {
         return;
       }
 
-      // 1. Fetch the registered user from localStorage
-      const savedAccount = JSON.parse(localStorage.getItem('userAccount'));
-
-      if (!savedAccount) {
-        alert('No user registration found. Please register first!');
+      const result = login(memberId, password, selectedRole);
+      if (!result.success) {
+        alert(result.message);
         return;
       }
 
-      // 2. Validate against stored fields (Checking both email or phone match)
-      if (savedAccount.email !== memberId && savedAccount.phone !== memberId) {
-        alert('Invalid credentials entered.');
-        return;
-      }
+      notifyLogin(result.user.fullName || result.user.username);
 
-      alert('Log in successful! Redirecting to your profile!');
-
-      notifyLogin(savedAccount.fullName || savedAccount.username);
-
-      // 3. Update the global state so your navbar switches immediately!
       if (typeof setUserAccount === 'function') {
-        setUserAccount(savedAccount);
+        setUserAccount(result.user);
       }
 
-      // 4. Redirect straight to the User Dashboard route
-      navigate('/userdashboard');
+      alert(`Log in successful! Welcome, ${result.user.fullName || 'User'}.`);
+      navigate(result.redirect);
     };
+
+  const demoAccount = selectedRole !== ROLES.MEMBER
+    ? DEFAULT_STAFF_ACCOUNTS.find((a) => a.role === selectedRole)
+    : null;
 
   const hover = (on, off) => ({
     onMouseEnter: (e) => {
@@ -227,6 +232,36 @@ export default function SignIn({ userAccount, setUserAccount }) {
                 style={s.hiddenField}
                 tabIndex={-1}
               />
+
+              <div>
+                <label style={s.label} htmlFor="login-role">
+                  SIGN IN AS
+                </label>
+                <select
+                  id="login-role"
+                  value={selectedRole}
+                  onChange={(e) => setSelectedRole(e.target.value)}
+                  style={{ ...s.input, cursor: 'pointer' }}
+                >
+                  {ROLE_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                <p style={{ fontSize: '11px', color: '#888', marginTop: '6px', lineHeight: 1.4 }}>
+                  {ROLE_OPTIONS.find((o) => o.value === selectedRole)?.description}
+                </p>
+              </div>
+
+              {demoAccount && (
+                <div style={s.demoBox}>
+                  <p style={{ margin: '0 0 4px', fontWeight: '700', fontSize: '11px' }}>Demo credentials</p>
+                  <p style={{ margin: 0, fontSize: '11px', color: '#555' }}>
+                    Email: {demoAccount.email} · Password: {demoAccount.password}
+                  </p>
+                </div>
+              )}
 
               <div>
                 <label style={s.label} htmlFor="login-id">
@@ -601,6 +636,13 @@ submitBtn: {
     pointerEvents: 'none',
     width: '1px',
     height: '1px',
+  },
+
+  demoBox: {
+    padding: '12px 14px',
+    backgroundColor: '#f0f4ff',
+    border: '1px solid #c7d2fe',
+    borderRadius: '8px',
   },
 };
 

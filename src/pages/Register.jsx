@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { ROLES, setSession } from '../utils/auth';
 
 function LibraryBookLogo({ size = 110 }) {
   return (
@@ -135,19 +136,23 @@ export default function Register() {
 
     // Save user information
     const userAccount = {
-      fullName: username, // change to fullName if you add a Full Name field
+      fullName: username,
       username,
       email,
       phone,
+      password,
+      role: ROLES.MEMBER,
       userId: `LIB-${Date.now()}`,
       status: 'Active Member',
       joinedDate: new Date().toLocaleDateString(),
     };
 
-    localStorage.setItem(
-      'userAccount',
-      JSON.stringify(userAccount)
-    );
+    localStorage.setItem('userAccount', JSON.stringify(userAccount));
+
+    setSession({
+      ...userAccount,
+      loginAt: new Date().toISOString(),
+    });
 
     alert('Registration Successful!');
 

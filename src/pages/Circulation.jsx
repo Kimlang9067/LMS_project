@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import Home from "./Home";
+import { getCurrentUser } from "../utils/auth";
 import { getEnrichedResources } from "../data/bookMeta";
 import {
   getCirculationRecords,
@@ -12,7 +13,7 @@ import { notifyBookBorrowed } from "../utils/notifications";
 
 export default function Circulation() {
   const location = useLocation();
-  const user = JSON.parse(localStorage.getItem("userAccount"));
+  const user = getCurrentUser();
   const borrowerName = getCurrentBorrowerName();
 
   const [records, setRecords] = useState(() =>
