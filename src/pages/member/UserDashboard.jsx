@@ -1,6 +1,6 @@
 import React from 'react';
-import Home from './Home';
-import { getCurrentUser } from '../utils/auth';
+import Home from '../public/Home';
+import { getCurrentUser } from '../../utils/auth';
 
 export default function UserDashboard() {
   const user = getCurrentUser();

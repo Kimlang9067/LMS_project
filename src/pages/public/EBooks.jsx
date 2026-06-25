@@ -1,6 +1,6 @@
 import React from 'react';
-import Navbar from '../components/Navbar';
-import BookCard from '../components/BookCard';
+import Navbar from '../../components/Navbar';
+import BookCard from '../../components/BookCard';
 
 export default function EBooks() {
   const digits = [

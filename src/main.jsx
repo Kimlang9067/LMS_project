@@ -1,24 +1,29 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
-import { createBrowserRouter, RouterProvider } from "react-router";
-import StaffLayout from "./layouts/StaffLayout.jsx";
+import { createBrowserRouter, RouterProvider, Navigate } from "react-router";
+import StaffLayout from "./Layouts/StaffLayout.jsx";
+import UserDashboardLayout from "./Layouts/UserDashboardLayout.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
-import Home from "./pages/Home.jsx";
-import EBooks from "./pages/EBooks.jsx";
-import About from "./pages/About.jsx";
-import Profile from "./pages/Profile.jsx";
-import SignIn from "./pages/SignIn.jsx";
-import Register from "./pages/Register.jsx";
-import ForgotPassword from "./pages/ForgotPassword.jsx";
-import UserDashboard from "./pages/UserDashboard.jsx";
-import Catalog, { CatalogGrid } from "./pages/Catalog";
-import BookDetails from "./pages/BookDetails";
-import ResetPassword from "./pages/ResetPassword.jsx";
-import Circulation from "./pages/Circulation";
-import Messages from "./pages/Messages";
-import Help from "./pages/Help";
-import RoleDashboard from "./pages/RoleDashboard.jsx";
+import Home from "./pages/public/Home.jsx";
+import EBooks from "./pages/public/EBooks.jsx";
+import About from "./pages/public/About.jsx";
+import SignIn from "./pages/public/SignIn.jsx";
+import Register from "./pages/public/Register.jsx";
+import ForgotPassword from "./pages/public/ForgotPassword.jsx";
+import ResetPassword from "./pages/public/ResetPassword.jsx";
+import Help from "./pages/public/Help.jsx";
+import Catalog, { CatalogGrid } from "./pages/public/Catalog";
+import BookDetails from "./pages/public/BookDetails";
+import Circulation from "./pages/public/Circulation";
+import MemberDashboard from "./pages/member/MemberDashboard.jsx";
+import MemberCatalog from "./pages/member/MemberCatalog.jsx";
+import MemberCirculation from "./pages/member/MemberCirculation.jsx";
+import Profile from "./pages/member/Profile.jsx";
+import Messages from "./pages/member/Messages";
+import RoleDashboard from "./pages/staff/RoleDashboard.jsx";
+import StaffProfile from "./pages/staff/StaffProfile.jsx";
+import LibrarianCatalog from "./pages/staff/LibrarianCatalog.jsx";
 import { ROLES, initStaffAccounts } from "./utils/auth";
 
 initStaffAccounts();
@@ -33,6 +38,7 @@ function staffRoute(path, role, subPaths = []) {
     ),
     children: [
       { index: true, element: <RoleDashboard /> },
+      { path: "profile", element: <StaffProfile /> },
       ...subPaths.map((sub) => ({ path: sub, element: <RoleDashboard /> })),
     ],
   };
@@ -49,40 +55,33 @@ const router = createBrowserRouter([
   { path: "/help", element: <Help /> },
 
   {
-    path: "/userdashboard",
+    path: "/user",
     element: (
       <ProtectedRoute allowedRoles={[ROLES.MEMBER]}>
-        <UserDashboard />
+        <UserDashboardLayout />
       </ProtectedRoute>
     ),
+    children: [
+      { index: true,            element: <Navigate to="/user/dashboard" replace /> },
+      { path: "dashboard",      element: <MemberDashboard /> },
+      { path: "catalog",        element: <MemberCatalog /> },
+      { path: "catalog/:id",    element: <BookDetails /> },
+      { path: "circulation",    element: <MemberCirculation /> },
+      { path: "profile",        element: <Profile /> },
+      { path: "messages",       element: <Messages /> },
+      { path: "about",          element: <About /> },
+      { path: "help",           element: <Help /> },
+    ],
   },
-  {
-    path: "/profile",
-    element: (
-      <ProtectedRoute allowedRoles={[ROLES.MEMBER]}>
-        <Profile />
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/messages",
-    element: (
-      <ProtectedRoute allowedRoles={[ROLES.MEMBER]}>
-        <Messages />
-      </ProtectedRoute>
-    ),
-  },
+  // Legacy redirects so old bookmarks still work
+  { path: "/userdashboard", element: <Navigate to="/user/dashboard" replace /> },
+  { path: "/profile",       element: <Navigate to="/user/profile"   replace /> },
+  { path: "/messages",      element: <Navigate to="/user/messages"  replace /> },
   {
     path: "/catalog",
     element: (
       <ProtectedRoute
-        allowedRoles={[
-          ROLES.MEMBER,
-          ROLES.LIBRARIAN,
-          ROLES.ADMINISTRATOR,
-          ROLES.SUPER_ADMIN,
-          ROLES.COMMUNITY,
-        ]}
+        allowedRoles={[ROLES.MEMBER, ROLES.LIBRARIAN, ROLES.ADMINISTRATOR, ROLES.SUPER_ADMIN]}
       >
         <Catalog />
       </ProtectedRoute>
@@ -96,26 +95,30 @@ const router = createBrowserRouter([
     path: "/circulation",
     element: (
       <ProtectedRoute
-        allowedRoles={[
-          ROLES.MEMBER,
-          ROLES.LIBRARIAN,
-          ROLES.ADMINISTRATOR,
-          ROLES.SUPER_ADMIN,
-        ]}
+        allowedRoles={[ROLES.MEMBER, ROLES.LIBRARIAN, ROLES.ADMINISTRATOR, ROLES.SUPER_ADMIN]}
       >
         <Circulation />
       </ProtectedRoute>
     ),
   },
 
-  staffRoute("/superadmin", ROLES.SUPER_ADMIN, ["users", "admins", "books", "notifications"]),
-  staffRoute("/admin", ROLES.ADMINISTRATOR, ["policies", "budget", "reports", "books", "notifications"]),
-  staffRoute("/librarian", ROLES.LIBRARIAN, ["members", "fines"]),
-  staffRoute("/it-staff", ROLES.IT_STAFF, ["health", "backups", "security"]),
-  staffRoute("/developer", ROLES.DEVELOPER, ["updates", "support", "logs"]),
-  staffRoute("/supplier", ROLES.BOOK_SUPPLIER, ["materials", "orders"]),
-  staffRoute("/institution", ROLES.INSTITUTION, ["funding", "standards", "reports"]),
-  staffRoute("/community", ROLES.COMMUNITY, ["outreach"]),
+  staffRoute("/superadmin", ROLES.SUPER_ADMIN,   ["users", "admins", "books", "notifications"]),
+  staffRoute("/admin",      ROLES.ADMINISTRATOR, ["policies", "budget", "reports", "books", "notifications"]),
+  {
+    path: "/librarian",
+    element: (
+      <ProtectedRoute allowedRoles={[ROLES.LIBRARIAN]}>
+        <StaffLayout />
+      </ProtectedRoute>
+    ),
+    children: [
+      { index: true,      element: <RoleDashboard /> },
+      { path: "profile",  element: <StaffProfile /> },
+      { path: "members",  element: <RoleDashboard /> },
+      { path: "fines",    element: <RoleDashboard /> },
+      { path: "catalog",  element: <LibrarianCatalog /> },
+    ],
+  },
 ]);
 
 createRoot(document.getElementById("root")).render(

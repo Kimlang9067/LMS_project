@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { getCurrentUser, getRoleLabel, isLoggedIn, getDashboardPath, ROLES } from "../utils/auth";
+import { getCurrentUser, getRoleLabel, isLoggedIn, getDashboardPath, ROLES } from "../../utils/auth";
 
 function LibraryBookLogo({ size = 110 }) {
   return (

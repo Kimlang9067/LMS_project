@@ -1,16 +1,18 @@
 import React, { useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { getBookById } from "../data/bookMeta";
-import { isBookPaid, markBookPaid } from "../utils/payments";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
+import { getBookById } from "../../data/bookMeta";
+import { isBookPaid, markBookPaid } from "../../utils/payments";
 import {
   addCirculationRecord,
   getCurrentBorrowerName,
-} from "../utils/circulation";
-import { notifyBookBorrowed } from "../utils/notifications";
+} from "../../utils/circulation";
+import { notifyBookBorrowed } from "../../utils/notifications";
 
 export default function BookDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const backPath = location.state?.backPath || '/catalog';
   const book = getBookById(id);
 
   const [paid, setPaid] = useState(() =>
@@ -24,7 +26,7 @@ export default function BookDetails() {
       <div>
         <h1 style={{ fontSize: "28px", fontWeight: "800" }}>Book not found</h1>
         <button
-          onClick={() => navigate("/catalog")}
+          onClick={() => navigate(backPath)}
           style={btnStyle("#000")}
         >
           ← Back to Catalog
@@ -70,7 +72,7 @@ export default function BookDetails() {
   return (
     <div>
       <button
-        onClick={() => navigate("/catalog")}
+        onClick={() => navigate(backPath)}
         style={{
           background: "none",
           border: "none",

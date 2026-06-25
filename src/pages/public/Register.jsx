@@ -1,13 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { notifyLogin } from '../utils/notifications';
-import {
-  login,
-  ROLE_OPTIONS,
-  ROLES,
-  initStaffAccounts,
-  DEFAULT_STAFF_ACCOUNTS,
-} from '../utils/auth';
+import { ROLES, setSession } from '../../utils/auth';
 
 function LibraryBookLogo({ size = 110 }) {
   return (
@@ -44,7 +37,10 @@ function LibraryBookLogo({ size = 110 }) {
 
       {/* Top Dark Book */}
       <g transform="translate(52,24) rotate(-12 70 28)">
-        <path d="M12 20L85 0L150 18L76 38L12 20Z" fill="#173F7A" />
+        <path
+          d="M12 20L85 0L150 18L76 38L12 20Z"
+          fill="#173F7A"
+        />
         <path
           d="M22 24L78 36L143 18"
           stroke="#ffffff"
@@ -64,24 +60,26 @@ function LibraryBookLogo({ size = 110 }) {
   );
 }
 
-export default function SignIn({ userAccount, setUserAccount }) { 
-  const [memberId, setMemberId] = useState('');
-  const [password, setPassword] = useState('');
-  const [remember, setRemember] = useState(false);
-  const [selectedRole, setSelectedRole] = useState(ROLES.MEMBER);
 
+const initialForm = {
+  username: '',
+  email: '',
+  phone: '',
+  password: '',
+  confirmPassword: '',
+  agree: false,
+};
+
+export default function Register() {
   const navigate = useNavigate();
+  const [formData, setFormData] = useState(initialForm);
   const formRef = useRef(null);
 
-  useEffect(() => {
-    initStaffAccounts();
-  }, []);
-
+  // Clear state on mount and again after short delays
+  // to fight browser autofill/password manager behavior
   useEffect(() => {
     const clearForm = () => {
-      setMemberId('');
-      setPassword('');
-      setRemember(false);
+      setFormData(initialForm);
 
       if (formRef.current) {
         const elements = formRef.current.elements;
@@ -108,41 +106,65 @@ export default function SignIn({ userAccount, setUserAccount }) {
     };
   }, []);
 
-  const handleSignIn = (e) => {
-      e.preventDefault();
+  const handleChange = (field) => (e) => {
+    const value = field === 'agree' ? e.target.checked : e.target.value;
+    setFormData((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
 
-      if (!memberId || !password) {
-        alert('Please enter your email/phone and password.');
-        return;
-      }
+  const handleRegister = (e) => {
+    e.preventDefault();
 
-      const result = login(memberId, password, selectedRole);
-      if (!result.success) {
-        alert(result.message);
-        return;
-      }
+    const { username, email, phone, password, confirmPassword, agree } = formData;
 
-      notifyLogin(result.user.fullName || result.user.username);
+    if (!username || !email || !phone || !password || !confirmPassword) {
+      alert('Please fill in all fields.');
+      return;
+    }
 
-      if (typeof setUserAccount === 'function') {
-        setUserAccount(result.user);
-      }
+    if (password !== confirmPassword) {
+      alert('Passwords do not match.');
+      return;
+    }
 
-      alert(`Log in successful! Welcome, ${result.user.fullName || 'User'}.`);
-      navigate(result.redirect);
+    if (!agree) {
+      alert('Please agree to the registration terms.');
+      return;
+    }
+
+    // Save user information
+    const userAccount = {
+      fullName: username,
+      username,
+      email,
+      phone,
+      password,
+      role: ROLES.MEMBER,
+      userId: `LIB-${Date.now()}`,
+      status: 'Active Member',
+      joinedDate: new Date().toLocaleDateString(),
     };
 
-  const demoAccount = selectedRole !== ROLES.MEMBER
-    ? DEFAULT_STAFF_ACCOUNTS.find((a) => a.role === selectedRole)
-    : null;
+    localStorage.setItem('userAccount', JSON.stringify(userAccount));
+
+    setSession({
+      ...userAccount,
+      loginAt: new Date().toISOString(),
+    });
+
+    alert('Registration Successful!');
+
+    setFormData(initialForm);
+
+    // Go directly to profile page
+    navigate('/userdashboard');
+  };
 
   const hover = (on, off) => ({
-    onMouseEnter: (e) => {
-      e.currentTarget.style.backgroundColor = on;
-    },
-    onMouseLeave: (e) => {
-      e.currentTarget.style.backgroundColor = off;
-    },
+    onMouseEnter: (e) => (e.currentTarget.style.backgroundColor = on),
+    onMouseLeave: (e) => (e.currentTarget.style.backgroundColor = off),
   });
 
   return (
@@ -163,18 +185,19 @@ export default function SignIn({ userAccount, setUserAccount }) {
               </div>
             </div>
 
-            <div>
+            <div style={s.quoteBox}>
               <blockquote style={s.quote}>
-                "Knowledge is the only asset that increases when shared across borders."
+                “A room without books is like a body without a soul.”
               </blockquote>
 
               <div style={s.signatureRow}>
                 <div style={s.signatureLine}></div>
-                <span style={s.signatureText}>System Administrator</span>
+                <span style={s.signatureText}>LIBRARY MOTTO</span>
               </div>
             </div>
           </div>
         </section>
+
 
         {/* RIGHT FORM PANEL */}
         <section style={s.rightPanel}>
@@ -183,41 +206,38 @@ export default function SignIn({ userAccount, setUserAccount }) {
             <div style={s.authTabs}>
               <button
                 type="button"
-                style={{ ...s.authTab, ...s.activeTab }}
+                style={s.authTab}
                 onClick={() => navigate('/signin')}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#ffffff';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = '#ffffff';
-                }}
               >
                 SIGN IN
               </button>
 
               <button
                 type="button"
-                style={s.authTab}
-                onClick={() => navigate('/register')}
+                style={{ ...s.authTab, ...s.activeTab }}
+                onClick={() => {
+                  setFormData(initialForm);
+                  navigate('/register');
+                }}
               >
                 SIGN UP
               </button>
             </div>
 
-            <header style={s.header}>
-              <h2 style={s.welcomeHeading}>Welcome Back!</h2>
+            <header style={{ marginBottom: '24px' }}>
+              <h2 style={s.welcomeHeading}>Create Account</h2>
               <p style={s.subText}>
-                Please enter your credentials to access the library.
+                Please enter your details to register for the library.
               </p>
             </header>
 
             <form
               ref={formRef}
-              onSubmit={handleSignIn}
+              onSubmit={handleRegister}
               style={s.formBlock}
               autoComplete="off"
             >
-              {/* Fake hidden fields to catch browser autofill */}
+              {/* Hidden fake fields to reduce browser autofill */}
               <input
                 type="text"
                 name="fake-username"
@@ -234,110 +254,117 @@ export default function SignIn({ userAccount, setUserAccount }) {
               />
 
               <div>
-                <label style={s.label} htmlFor="login-role">
-                  SIGN IN AS
-                </label>
-                <select
-                  id="login-role"
-                  value={selectedRole}
-                  onChange={(e) => setSelectedRole(e.target.value)}
-                  style={{ ...s.input, cursor: 'pointer' }}
-                >
-                  {ROLE_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-                <p style={{ fontSize: '11px', color: '#888', marginTop: '6px', lineHeight: 1.4 }}>
-                  {ROLE_OPTIONS.find((o) => o.value === selectedRole)?.description}
-                </p>
-              </div>
-
-              {demoAccount && (
-                <div style={s.demoBox}>
-                  <p style={{ margin: '0 0 4px', fontWeight: '700', fontSize: '11px' }}>Demo credentials</p>
-                  <p style={{ margin: 0, fontSize: '11px', color: '#555' }}>
-                    Email: {demoAccount.email} · Password: {demoAccount.password}
-                  </p>
-                </div>
-              )}
-
-              <div>
-                <label style={s.label} htmlFor="login-id">
-                  PHONE NUMBER OR EMAIL
+                <label style={s.label} htmlFor="reg-user-name">
+                  USER NAME
                 </label>
                 <input
-                  id="login-id"
-                  name="login-member-id-random"
+                  id="reg-user-name"
+                  name="reg-user-name"
                   type="text"
-                  placeholder="Phone number or email"
-                  value={memberId}
-                  onChange={(e) => setMemberId(e.target.value)}
+                  placeholder="User Name"
+                  value={formData.username}
+                  onChange={handleChange('username')}
                   style={s.input}
                   autoComplete="off"
-                  readOnly
-                  onFocus={(e) => e.target.removeAttribute('readonly')}
                   required
                 />
               </div>
 
               <div>
-                <div style={s.labelRow}>
-                  <label style={s.label} htmlFor="login-password">
-                    PASSWORD
-                  </label>
-
-                  <span
-                    onClick={() => navigate('/forgot-password')}
-                    style={s.forgotLink}
-                  >
-                    Forgot Password?
-                  </span>
-                </div>
-
+                <label style={s.label} htmlFor="reg-email-address">
+                  EMAIL
+                </label>
                 <input
-                  id="login-password"
-                  name="login-password-random"
+                  id="reg-email-address"
+                  name="reg-email-address"
+                  type="email"
+                  placeholder="Email Adress"
+                  value={formData.email}
+                  onChange={handleChange('email')}
+                  style={s.input}
+                  autoComplete="off"
+                  required
+                />
+              </div>
+
+              <div>
+                <label style={s.label} htmlFor="reg-phone-number">
+                  PHONE NUMBER
+                </label>
+                <input
+                  id="reg-phone-number"
+                  name="reg-phone-number"
+                  type="tel"
+                  placeholder="Phone Number"
+                  value={formData.phone}
+                  onChange={handleChange('phone')}
+                  style={s.input}
+                  autoComplete="off"
+                  required
+                />
+              </div>
+
+              <div>
+                <label style={s.label} htmlFor="reg-new-password">
+                  PASSWORD
+                </label>
+                <input
+                  id="reg-new-password"
+                  name="reg-new-password"
                   type="password"
                   placeholder="Password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  value={formData.password}
+                  onChange={handleChange('password')}
                   style={s.input}
                   autoComplete="new-password"
-                  readOnly
-                  onFocus={(e) => e.target.removeAttribute('readonly')}
+                  required
+                />
+              </div>
+
+              <div>
+                <label style={s.label} htmlFor="reg-confirm-new-password">
+                  CONFIRM PASSWORD
+                </label>
+                <input
+                  id="reg-confirm-new-password"
+                  name="reg-confirm-new-password"
+                  type="password"
+                  placeholder="Confirm Your Password"
+                  value={formData.confirmPassword}
+                  onChange={handleChange('confirmPassword')}
+                  style={s.input}
+                  autoComplete="new-password"
                   required
                 />
               </div>
 
               <div style={s.checkboxRow}>
                 <input
-                  id="remember"
+                  id="agree"
                   type="checkbox"
-                  checked={remember}
-                  onChange={(e) => setRemember(e.target.checked)}
+                  checked={formData.agree}
+                  onChange={handleChange('agree')}
                   style={s.checkbox}
                 />
-                <label htmlFor="remember" style={s.checkboxLabel}>
-                  Remember this session
+                <label htmlFor="agree" style={s.checkboxLabel}>
+                  I agree to the registration terms
                 </label>
               </div>
+
               <button
                 type="submit"
                 style={s.submitBtn}
-                {...hover('#000000', '#000000')}
+                {...hover('#1a2b3c', '#041627')}
               >
-                Sign In
+                SIGN UP
               </button>
             </form>
 
             <footer style={s.footer}>
               <p style={s.copyright}>© Data_Science Library Systems</p>
-
               <div style={s.footerLinks}>
-                <span onClick={() => navigate('/register')} style={s.footerLink}>
-                  Sign Up
+                <span onClick={() => navigate('/signin')} style={s.footerLink}>
+                  Sign In
                 </span>
                 <span style={s.footerLink}>System Status</span>
                 <span style={s.footerLink}>Help Desk</span>
@@ -379,10 +406,15 @@ const s = {
   // LEFT PANEL
   leftPanel: {
     flex: '1 1 380px',
-    backgroundColor: '#041627',
     position: 'relative',
     padding: '40px',
     display: 'flex',
+    backgroundColor: '#041627',
+    backgroundImage:
+      'linear-gradient(rgba(4,22,39,0.72), rgba(4,22,39,0.88)), url("/book-library.jpg")',
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+    backgroundRepeat: 'no-repeat',
   },
 
   leftOverlay: {
@@ -395,38 +427,16 @@ const s = {
     color: '#ffffff',
   },
 
-  brandRow: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '16px',
-  },
-
-  logoWrap: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-
-  brandTextWrap: {
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'center',
-  },
-
   brandTitle: {
     fontSize: '24px',
     fontWeight: '700',
-    margin: '0',
-    color: '#ffffff',
-    lineHeight: '1.2',
+    margin: '16px 0 0 0',
   },
 
   brandSubtitle: {
     fontSize: '18px',
     color: '#ff3b30',
-    margin: '4px 0 8px 0',
-    lineHeight: '1.2',
+    margin: '4px 0 12px 0',
   },
 
   brandTagline: {
@@ -435,12 +445,19 @@ const s = {
     margin: 0,
   },
 
+  quoteBox: {
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    padding: '18px',
+    borderRadius: '12px',
+    backdropFilter: 'blur(2px)',
+  },
+
   quote: {
     fontStyle: 'italic',
     fontSize: '16px',
-    lineHeight: '1.6',
+    lineHeight: '1.7',
     color: '#ffffff',
-    opacity: 0.9,
+    opacity: 0.95,
     margin: '0 0 16px 0',
   },
 
@@ -453,14 +470,14 @@ const s = {
   signatureLine: {
     width: '40px',
     height: '1px',
-    backgroundColor: '#8192a7',
+    backgroundColor: '#b7c8de',
   },
 
   signatureText: {
     fontSize: '11px',
     letterSpacing: '2px',
     textTransform: 'uppercase',
-    color: '#8192a7',
+    color: '#b7c8de',
   },
 
   // RIGHT PANEL
@@ -506,11 +523,6 @@ const s = {
     boxShadow: '0 1px 2px rgba(0,0,0,0.06)',
   },
 
-
-  header: {
-    marginBottom: '24px',
-  },
-
   welcomeHeading: {
     fontSize: '28px',
     fontWeight: '700',
@@ -528,7 +540,6 @@ const s = {
     display: 'flex',
     flexDirection: 'column',
     gap: '18px',
-    position: 'relative',
   },
 
   label: {
@@ -540,21 +551,6 @@ const s = {
     marginBottom: '6px',
   },
 
-  labelRow: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '6px',
-  },
-
-  forgotLink: {
-    fontSize: '11px',
-    fontWeight: '600',
-    color: '#041627',
-    cursor: 'pointer',
-    textDecoration: 'underline',
-  },
-
   input: {
     width: '100%',
     padding: '12px 14px',
@@ -564,7 +560,6 @@ const s = {
     outline: 'none',
     boxSizing: 'border-box',
     fontFamily: '"Inter", system-ui, sans-serif',
-    backgroundColor: '#ffffff',
   },
 
   checkboxRow: {
@@ -584,21 +579,21 @@ const s = {
     color: '#44474c',
   },
 
-submitBtn: {
-  width: '100%',
-  backgroundColor: '#000000',
-  color: '#fefefe',
-  border: 'none',
-  padding: '14px',
-  fontSize: '12px',
-  fontWeight: '700',
-  letterSpacing: '2px',
-  textTransform: 'uppercase',
-  borderRadius: '8px',
-  cursor: 'pointer',
-  marginTop: '2px',   // smaller gap
-  transition: 'background-color 0.2s ease',
-},
+  submitBtn: {
+    width: '100%',
+    backgroundColor: '#041627',
+    color: '#ffffff',
+    border: 'none',
+    padding: '14px',
+    fontSize: '12px',
+    fontWeight: '700',
+    letterSpacing: '2px',
+    textTransform: 'uppercase',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    marginTop: '8px',
+    transition: 'background-color 0.2s ease',
+  },
 
   footer: {
     marginTop: '32px',
@@ -638,11 +633,50 @@ submitBtn: {
     height: '1px',
   },
 
-  demoBox: {
-    padding: '12px 14px',
-    backgroundColor: '#f0f4ff',
-    border: '1px solid #c7d2fe',
-    borderRadius: '8px',
-  },
-};
+  logoWrap: {
+  display: 'flex',
+  justifyContent: 'flex-start',
+  alignItems: 'center',
+  marginBottom: '6px',
+},
 
+brandRow: {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '16px',
+},
+
+logoWrap: {
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  flexShrink: 0,
+},
+
+brandTextWrap: {
+  display: 'flex',
+  flexDirection: 'column',
+  justifyContent: 'center',
+},
+
+brandTitle: {
+  fontSize: '24px',
+  fontWeight: '700',
+  margin: '0',
+  color: '#ffffff',
+  lineHeight: '1.2',
+},
+
+brandSubtitle: {
+  fontSize: '18px',
+  color: '#ff3b30',
+  margin: '4px 0 8px 0',
+  lineHeight: '1.2',
+},
+
+brandTagline: {
+  fontSize: '13px',
+  color: '#d7e3f1',
+  margin: 0,
+},
+};

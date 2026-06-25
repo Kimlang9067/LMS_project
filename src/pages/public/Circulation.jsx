@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import Home from "./Home";
-import { getCurrentUser } from "../utils/auth";
-import { getEnrichedResources } from "../data/bookMeta";
+import { getCurrentUser } from "../../utils/auth";
+import { getEnrichedResources } from "../../data/bookMeta";
 import {
   getCirculationRecords,
   saveCirculationRecords,
   getCurrentBorrowerName,
   processExpiredLoans,
-} from "../utils/circulation";
-import { notifyBookBorrowed } from "../utils/notifications";
+} from "../../utils/circulation";
+import { notifyBookBorrowed } from "../../utils/notifications";
 
 export default function Circulation() {
   const location = useLocation();

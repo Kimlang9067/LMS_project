@@ -1,10 +1,35 @@
+/* ── Reset ───────────────────────────────────────────────────────────────── */
 button {
   outline: none;
   box-shadow: none;
+  cursor: pointer;
+  transition: opacity 0.15s ease, filter 0.15s ease, transform 0.12s ease;
 }
 
 button:focus,
 button:active {
   outline: none;
   box-shadow: none;
+}
+
+/* ── Universal hover — works on every button across all pages ────────────── */
+button:hover:not(:disabled) {
+  opacity: 0.82;
+  filter: brightness(1.08);
+}
+
+button:active:not(:disabled) {
+  transform: scale(0.97);
+  opacity: 1;
+  filter: brightness(0.95);
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+/* ── Links styled as buttons (e.g. nav <Link>) ───────────────────────────── */
+a {
+  transition: opacity 0.15s ease;
 }

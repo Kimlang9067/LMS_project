@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { useNavigate, Outlet, useParams } from "react-router-dom";
 import Home from "./Home";
-import { getCurrentUser } from "../utils/auth";
-import { getEnrichedResources } from "../data/bookMeta";
+import { getCurrentUser } from "../../utils/auth";
+import { getEnrichedResources } from "../../data/bookMeta";
 
 function CatalogGrid() {
   const [search, setSearch] = useState("");
