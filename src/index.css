@@ -33,3 +33,78 @@ button:disabled {
 a {
   transition: opacity 0.15s ease;
 }
+
+/* ── CSS Custom Properties ────────────────────────────────────────────────── */
+:root {
+  --lms-bg:       #f4f6f9;
+  --lms-card:     #ffffff;
+  --lms-input:    #ffffff;
+  --lms-thead:    #f8fafc;
+  --lms-border:   #e2e8f0;
+  --lms-text:     #0f172a;
+  --lms-text-sub: #64748b;
+}
+
+[data-theme="dark"] {
+  --lms-bg:       #0F172A;
+  --lms-card:     #1E293B;
+  --lms-input:    #1F2937;
+  --lms-thead:    #0f172a;
+  --lms-border:   #334155;
+  --lms-text:     #F8FAFC;
+  --lms-text-sub: #CBD5E1;
+}
+
+/* Apply dark to body */
+[data-theme="dark"] body {
+  background-color: #0F172A;
+  color: #F8FAFC;
+}
+
+/* Layout containers */
+[data-theme="dark"] .lms-main    { background-color: #0F172A !important; }
+[data-theme="dark"] .lms-topbar  { background-color: #0c1929 !important; border-bottom-color: #1e293b !important; }
+[data-theme="dark"] .lms-content { background-color: #0F172A !important; }
+
+/* Form elements — override inline styles */
+[data-theme="dark"] input:not([type="checkbox"]):not([type="radio"]),
+[data-theme="dark"] select,
+[data-theme="dark"] textarea {
+  background-color: #1F2937 !important;
+  color: #F8FAFC !important;
+  border-color: #334155 !important;
+}
+[data-theme="dark"] input::placeholder,
+[data-theme="dark"] textarea::placeholder { color: #4b5563 !important; }
+
+/* Tables */
+[data-theme="dark"] thead tr                { background-color: #0f172a !important; }
+[data-theme="dark"] th                      { color: #CBD5E1 !important; border-color: #334155 !important; }
+[data-theme="dark"] td                      { color: #F8FAFC !important; border-color: #334155 !important; }
+[data-theme="dark"] tbody tr:nth-child(odd) { background-color: #1e293b !important; }
+[data-theme="dark"] tbody tr:nth-child(even){ background-color: #162032 !important; }
+
+/* Scrollbar */
+[data-theme="dark"] ::-webkit-scrollbar       { background: #0F172A; }
+[data-theme="dark"] ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+
+/* ── Spinner animation (used in credential generation loading state) ─────── */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Khmer font support ───────────────────────────────────────────────────── */
+:root {
+  --font-khmer: 'Hanuman', 'Khmer OS', 'Noto Sans Khmer', system-ui, sans-serif;
+}
+
+/* When Khmer is active, improve rendering for Khmer characters */
+[data-lang="km"] {
+  font-family: var(--font-khmer);
+}
+[data-lang="km"] button,
+[data-lang="km"] input,
+[data-lang="km"] select,
+[data-lang="km"] textarea {
+  font-family: var(--font-khmer);
+}

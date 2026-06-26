@@ -11,22 +11,28 @@ import About from "./pages/public/About.jsx";
 import SignIn from "./pages/public/SignIn.jsx";
 import Register from "./pages/public/Register.jsx";
 import ForgotPassword from "./pages/public/ForgotPassword.jsx";
+import VerifyOTP from "./pages/public/VerifyOTP.jsx";
 import ResetPassword from "./pages/public/ResetPassword.jsx";
 import Help from "./pages/public/Help.jsx";
 import Catalog, { CatalogGrid } from "./pages/public/Catalog";
 import BookDetails from "./pages/public/BookDetails";
-import Circulation from "./pages/public/Circulation";
 import MemberDashboard from "./pages/member/MemberDashboard.jsx";
 import MemberCatalog from "./pages/member/MemberCatalog.jsx";
-import MemberCirculation from "./pages/member/MemberCirculation.jsx";
 import Profile from "./pages/member/Profile.jsx";
 import Messages from "./pages/member/Messages";
+import SettingsPage from "./pages/shared/SettingsPage.jsx";
 import RoleDashboard from "./pages/staff/RoleDashboard.jsx";
 import StaffProfile from "./pages/staff/StaffProfile.jsx";
 import LibrarianCatalog from "./pages/staff/LibrarianCatalog.jsx";
+import SuperAdminInbox from "./pages/staff/SuperAdminInbox.jsx";
+import MessageSuperAdmin from "./pages/staff/MessageSuperAdmin.jsx";
 import { ROLES, initStaffAccounts } from "./utils/auth";
+import { initDatabase } from "./data/database";
+import "./utils/theme";   // applies saved theme on startup
+import "./utils/i18n";    // applies saved language on startup
 
 initStaffAccounts();
+initDatabase();
 
 function staffRoute(path, role, subPaths = []) {
   return {
@@ -51,6 +57,7 @@ const router = createBrowserRouter([
   { path: "/signin", element: <SignIn /> },
   { path: "/register", element: <Register /> },
   { path: "/forgot-password", element: <ForgotPassword /> },
+  { path: "/verify-otp",     element: <VerifyOTP /> },
   { path: "/reset-password", element: <ResetPassword /> },
   { path: "/help", element: <Help /> },
 
@@ -62,15 +69,14 @@ const router = createBrowserRouter([
       </ProtectedRoute>
     ),
     children: [
-      { index: true,            element: <Navigate to="/user/dashboard" replace /> },
-      { path: "dashboard",      element: <MemberDashboard /> },
-      { path: "catalog",        element: <MemberCatalog /> },
-      { path: "catalog/:id",    element: <BookDetails /> },
-      { path: "circulation",    element: <MemberCirculation /> },
-      { path: "profile",        element: <Profile /> },
-      { path: "messages",       element: <Messages /> },
-      { path: "about",          element: <About /> },
-      { path: "help",           element: <Help /> },
+      { index: true,        element: <Navigate to="/user/dashboard" replace /> },
+      { path: "dashboard",  element: <MemberDashboard /> },
+      { path: "catalog",    element: <MemberCatalog /> },
+      { path: "profile",    element: <Profile /> },
+      { path: "messages",   element: <Messages /> },
+      { path: "about",    element: <About />       },
+      { path: "help",     element: <Help />        },
+      { path: "settings", element: <SettingsPage />},
     ],
   },
   // Legacy redirects so old bookmarks still work
@@ -92,18 +98,41 @@ const router = createBrowserRouter([
     ],
   },
   {
-    path: "/circulation",
+    path: "/superadmin",
     element: (
-      <ProtectedRoute
-        allowedRoles={[ROLES.MEMBER, ROLES.LIBRARIAN, ROLES.ADMINISTRATOR, ROLES.SUPER_ADMIN]}
-      >
-        <Circulation />
+      <ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN]}>
+        <StaffLayout />
       </ProtectedRoute>
     ),
+    children: [
+      { index: true,              element: <RoleDashboard /> },
+      { path: "profile",          element: <StaffProfile /> },
+      { path: "users",            element: <RoleDashboard /> },
+      { path: "catalog",          element: <RoleDashboard /> },
+      { path: "reports",          element: <RoleDashboard /> },
+      { path: "budget",           element: <RoleDashboard /> },
+      { path: "notifications",    element: <SuperAdminInbox /> },
+      { path: "settings",         element: <RoleDashboard /> },
+    ],
   },
-
-  staffRoute("/superadmin", ROLES.SUPER_ADMIN,   ["users", "admins", "books", "notifications"]),
-  staffRoute("/admin",      ROLES.ADMINISTRATOR, ["policies", "budget", "reports", "books", "notifications"]),
+  {
+    path: "/admin",
+    element: (
+      <ProtectedRoute allowedRoles={[ROLES.ADMINISTRATOR]}>
+        <StaffLayout />
+      </ProtectedRoute>
+    ),
+    children: [
+      { index: true,              element: <RoleDashboard /> },
+      { path: "profile",          element: <StaffProfile /> },
+      { path: "budget",           element: <RoleDashboard /> },
+      { path: "reports",          element: <RoleDashboard /> },
+      { path: "books",            element: <RoleDashboard /> },
+      { path: "notifications",    element: <RoleDashboard /> },
+      { path: "messages",         element: <MessageSuperAdmin /> },
+      { path: "settings",         element: <RoleDashboard /> },
+    ],
+  },
   {
     path: "/librarian",
     element: (
@@ -112,11 +141,13 @@ const router = createBrowserRouter([
       </ProtectedRoute>
     ),
     children: [
-      { index: true,      element: <RoleDashboard /> },
-      { path: "profile",  element: <StaffProfile /> },
-      { path: "members",  element: <RoleDashboard /> },
-      { path: "fines",    element: <RoleDashboard /> },
-      { path: "catalog",  element: <LibrarianCatalog /> },
+      { index: true,       element: <RoleDashboard /> },
+      { path: "profile",   element: <StaffProfile />  },
+      { path: "members",   element: <RoleDashboard /> },
+      { path: "fines",     element: <RoleDashboard /> },
+      { path: "catalog",   element: <LibrarianCatalog /> },
+      { path: "messages",  element: <MessageSuperAdmin /> },
+      { path: "settings",  element: <RoleDashboard /> },
     ],
   },
 ]);

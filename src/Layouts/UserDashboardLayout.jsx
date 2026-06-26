@@ -3,14 +3,14 @@ import { useNavigate } from 'react-router';
 import { logout } from '../utils/auth';
 import AppLayout from '../components/shared/AppLayout';
 
+// Profile removed from sidebar — managed inside Settings page
 const MEMBER_NAV = [
-  { label: 'Dashboard',   path: '/user/dashboard',   pageTitle: 'My Dashboard'      },
-  { label: 'Catalog',     path: '/user/catalog',     pageTitle: 'Library Catalog'   },
-  { label: 'Circulation', path: '/user/circulation', pageTitle: 'My Circulation'    },
-  { label: 'Profile',     path: '/user/profile',     pageTitle: 'My Profile'        },
-  { label: 'Messages',    path: '/user/messages',    pageTitle: 'Messages'          },
-  { label: 'About',       path: '/user/about',       pageTitle: 'About the Library' },
-  { label: 'Help',        path: '/user/help',        pageTitle: 'Help Center'       },
+  { label: 'Dashboard', path: '/user/dashboard', pageTitle: 'My Dashboard'      },
+  { label: 'Catalog',   path: '/user/catalog',   pageTitle: 'Library Catalog'   },
+  { label: 'Messages',  path: '/user/messages',  pageTitle: 'Messages'          },
+  { label: 'About',     path: '/user/about',     pageTitle: 'About the Library' },
+  { label: 'Help',      path: '/user/help',      pageTitle: 'Help Center'       },
+  { label: 'Settings',  path: '/user/settings',  pageTitle: 'Settings'          },
 ];
 
 export default function UserDashboardLayout() {
@@ -19,21 +19,42 @@ export default function UserDashboardLayout() {
   const savedUser = localStorage.getItem('userAccount');
   const user = savedUser ? JSON.parse(savedUser) : { fullName: 'Member', username: 'member' };
 
-  const [notifVisible, setNotifVisible] = useState(false);
+  const [notifVisible,  setNotifVisible]  = useState(false);
+  const [notifMessage,  setNotifMessage]  = useState('');
 
   useEffect(() => {
-    const seen = sessionStorage.getItem('memberNotifShown');
+    const seen         = sessionStorage.getItem('memberNotifShown');
+    const justRegister = sessionStorage.getItem('justRegistered');
+
     if (!seen) {
+      if (justRegister) {
+        setNotifMessage(
+          `🎉 Welcome, ${user.fullName}! Your account has been created successfully. You are now a Library Member.`
+        );
+        sessionStorage.removeItem('justRegistered');
+      } else {
+        setNotifMessage(
+          `Welcome back, ${user.fullName}! You are logged in as a Library Member.`
+        );
+      }
       setNotifVisible(true);
       sessionStorage.setItem('memberNotifShown', 'true');
     }
   }, []);
 
-  const avatarSrc = localStorage.getItem(`memberAvatar_${user.username || 'member'}`);
+  const avatarKey = `memberAvatar_${user.username || 'member'}`;
+  const [avatarSrc, setAvatarSrc] = useState(() => localStorage.getItem(avatarKey));
+
+  useEffect(() => {
+    const refresh = () => setAvatarSrc(localStorage.getItem(avatarKey));
+    window.addEventListener('avatarUpdated', refresh);
+    return () => window.removeEventListener('avatarUpdated', refresh);
+  }, [avatarKey]);
 
   return (
     <AppLayout
       navItems={MEMBER_NAV}
+      profilePath="/user/profile"
       portalLabel="Member Portal"
       displayName={user.fullName || 'Member'}
       roleLabel={`@${user.username || 'member'}`}
@@ -45,7 +66,7 @@ export default function UserDashboardLayout() {
       }}
       loginNotif={{
         visible:   notifVisible,
-        message:   `Welcome back, ${user.fullName}! You are logged in as a Library Member.`,
+        message:   notifMessage,
         onDismiss: () => setNotifVisible(false),
       }}
     />

@@ -2,6 +2,17 @@ import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { getCurrentUser, getRoleLabel, isLoggedIn, getDashboardPath, ROLES } from "../../utils/auth";
 
+function getCatalogPath(user) {
+  if (!user) return "/signin";
+  switch (user.role) {
+    case ROLES.MEMBER:        return "/user/catalog";
+    case ROLES.LIBRARIAN:     return "/librarian/catalog";
+    case ROLES.ADMINISTRATOR: return "/admin/books";
+    case ROLES.SUPER_ADMIN:   return "/superadmin/catalog";
+    default:                  return "/catalog";
+  }
+}
+
 function LibraryBookLogo({ size = 110 }) {
   return (
     <svg
@@ -329,86 +340,117 @@ export default function Home(props) {
               </p>
 
               <div style={s.row}>
+
+                {/* Card 1 — Natural Sciences & Physics */}
                 <div style={{ ...s.card, flex: "2 1 400px", position: "relative", overflow: "hidden", padding: 0 }}>
                   <div style={{ display: "flex", justifyContent: "space-between" }}>
                     <div style={{ padding: "24px" }}>
                       <h3 style={s.cardTitle}>Natural Sciences & Physics</h3>
                       <p style={s.cardDesc}>From quantum mechanics to global ecosystems, explore our vast collection of peer-reviewed journals and datasets.</p>
-                      <button
-                        onClick={() => navigate("/catalog")}
-                        style={{
-                          border: "none",
-                          background: "transparent",
-                          fontWeight: "700",
-                          cursor: "pointer",
-                          padding: "8px 12px",
-                          borderRadius: "8px",
-                          transition: "all 0.2s ease",
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.boxShadow = "0 4px 12px rgba(128,128,128,0.4)";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.boxShadow = "none";
-                        }}
-                      >
-                        Explore STEM →
-                    </button>
                     </div>
                     <img src="https://images.pexels.com/photos/2280571/pexels-photo-2280571.jpeg?auto=compress&cs=tinysrgb&w=600" alt="" style={s.cardImg} />
                   </div>
                 </div>
 
-                <div
-                style={{
-                  ...s.card,
-                  flex: "1 1 240px",
-                  backgroundColor: "#000",
-                  color: "#fff",
-                  ...s.flexCol,
-                  justifyContent: "space-between",
-                }}
-              >
-                <div style={s.darkIconCircle}>𝔸</div>
-
-                <div>
-                  <h3 style={{ ...s.cardTitle, color: "#fff" }}>
-                    Historical Archives
-                  </h3>
-
-                  <p style={{ ...s.cardDesc, color: "#ccc" }}>
-                    Ancient manuscripts and documented heritage spanning three millennia of human history.
-                  </p>
+                {/* Card 2 — Historical Archives */}
+                <div style={{ ...s.card, flex: "1 1 240px", backgroundColor: "#000", color: "#fff", ...s.flexCol, justifyContent: "space-between" }}>
+                  <div style={s.darkIconCircle}>𝔸</div>
+                  <div>
+                    <h3 style={{ ...s.cardTitle, color: "#fff" }}>Historical Archives</h3>
+                    <p style={{ ...s.cardDesc, color: "#ccc" }}>Ancient manuscripts and documented heritage spanning three millennia of human history.</p>
+                  </div>
+                  <a
+                    href="https://www.worldhistory.org/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ color: "#fff", textDecoration: "none", fontWeight: "700", marginTop: "12px", padding: "10px 14px", borderRadius: "8px", display: "inline-block", transition: "all 0.2s ease" }}
+                    onMouseEnter={(e) => { e.currentTarget.style.boxShadow = "0 4px 12px rgba(128,128,128,0.4)"; e.currentTarget.style.backgroundColor = "#1a1a1a"; e.currentTarget.style.transform = "translateY(-2px)"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.backgroundColor = "transparent"; e.currentTarget.style.transform = "translateY(0)"; }}
+                  >
+                    View Archives →
+                  </a>
                 </div>
 
-                <a
-                  href="https://www.worldhistory.org/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    color: "#fff",
-                    textDecoration: "none",
-                    fontWeight: "700",
-                    marginTop: "12px",
-                    padding: "10px 14px",
-                    borderRadius: "8px",
-                    display: "inline-block",
-                    transition: "all 0.2s ease",
-                  }}
-                  onMouseEnter={(e) => {
-                  e.currentTarget.style.boxShadow = "0 4px 12px rgba(128,128,128,0.4)";
-                  e.currentTarget.style.backgroundColor = "#1a1a1a";
-                  e.currentTarget.style.transform = "translateY(-2px)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.boxShadow = "none";
-                    e.currentTarget.style.backgroundColor = "transparent";
-                    e.currentTarget.style.transform = "translateY(0)";
-                  }}
-                >
-                  View Archives →
-                </a>
-              </div>
+                {/* Card 3 — Computer Science Must-Reads */}
+                <div style={{ ...s.card, flex: "1 1 300px", background: "linear-gradient(135deg, #1e3a5f 0%, #0f172a 100%)", color: "#fff", ...s.flexCol, justifyContent: "space-between", position: "relative", overflow: "hidden" }}>
+                  {/* decorative circle */}
+                  <div style={{ position: "absolute", top: "-30px", right: "-30px", width: "120px", height: "120px", borderRadius: "50%", backgroundColor: "rgba(99,102,241,0.15)" }} />
+                  <div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "14px" }}>
+                      <div style={{ width: "36px", height: "36px", borderRadius: "8px", backgroundColor: "#6366f1", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px", flexShrink: 0 }}>💻</div>
+                      <span style={{ fontSize: "11px", fontWeight: "700", color: "#818cf8", textTransform: "uppercase", letterSpacing: "1px" }}>Must-Reads</span>
+                    </div>
+                    <h3 style={{ ...s.cardTitle, color: "#fff", marginBottom: "10px" }}>Computer Science Classics</h3>
+                    <p style={{ ...s.cardDesc, color: "#94a3b8", marginBottom: "16px" }}>The canonical texts every CS student and practitioner should own — from Knuth's TAOCP to SICP and CLRS.</p>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginBottom: "18px" }}>
+                      {[
+                        { title: "Introduction to Algorithms", author: "Cormen et al." },
+                        { title: "The Art of Computer Programming", author: "Donald Knuth" },
+                        { title: "Structure & Interpretation of Programs", author: "Abelson & Sussman" },
+                      ].map((b) => (
+                        <div key={b.title} style={{ display: "flex", gap: "8px", alignItems: "flex-start" }}>
+                          <span style={{ color: "#6366f1", fontWeight: "800", flexShrink: 0, marginTop: "1px" }}>›</span>
+                          <div>
+                            <span style={{ fontSize: "12px", fontWeight: "700", color: "#e2e8f0" }}>{b.title}</span>
+                            <span style={{ fontSize: "11px", color: "#64748b", marginLeft: "6px" }}>{b.author}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <a
+                    href="https://openlibrary.org/subjects/computer_science"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ color: "#818cf8", textDecoration: "none", fontWeight: "700", fontSize: "14px", display: "inline-flex", alignItems: "center", gap: "6px", transition: "all 0.2s" }}
+                    onMouseEnter={(e) => { e.currentTarget.style.color = "#a5b4fc"; e.currentTarget.style.transform = "translateX(4px)"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.color = "#818cf8"; e.currentTarget.style.transform = "translateX(0)"; }}
+                  >
+                    View on Open Library →
+                  </a>
+                </div>
+
+                {/* Card 4 — World's Most Influential Books */}
+                <div style={{ ...s.card, flex: "1 1 300px", position: "relative", overflow: "hidden", padding: 0 }}>
+                  <img
+                    src="https://images.pexels.com/photos/256541/pexels-photo-256541.jpeg?auto=compress&cs=tinysrgb&w=800"
+                    alt="Famous books"
+                    style={{ width: "100%", height: "140px", objectFit: "cover", objectPosition: "center top", borderRadius: "16px 16px 0 0" }}
+                  />
+                  <div style={{ padding: "20px" }}>
+                    <div style={{ display: "inline-block", backgroundColor: "#fef3c7", color: "#b45309", fontSize: "11px", fontWeight: "700", padding: "3px 10px", borderRadius: "20px", marginBottom: "10px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                      All-Time Famous
+                    </div>
+                    <h3 style={{ ...s.cardTitle, fontSize: "18px", marginBottom: "8px" }}>World's Most Influential Books</h3>
+                    <p style={{ ...s.cardDesc, marginBottom: "14px" }}>Timeless works that shaped human thought — from Darwin and Einstein to Turing and Hawking.</p>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginBottom: "16px" }}>
+                      {[
+                        { title: "A Brief History of Time", author: "Stephen Hawking" },
+                        { title: "On the Origin of Species", author: "Charles Darwin" },
+                        { title: "The Selfish Gene", author: "Richard Dawkins" },
+                      ].map((b) => (
+                        <div key={b.title} style={{ display: "flex", gap: "8px", alignItems: "flex-start" }}>
+                          <span style={{ color: "#f59e0b", fontWeight: "800", flexShrink: 0, marginTop: "1px" }}>›</span>
+                          <div>
+                            <span style={{ fontSize: "12px", fontWeight: "700", color: "#0f172a" }}>{b.title}</span>
+                            <span style={{ fontSize: "11px", color: "#64748b", marginLeft: "6px" }}>{b.author}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <a
+                      href="https://www.goodreads.com/list/show/953.Books_That_Everyone_Should_Read_At_Least_Once"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ color: "#b45309", textDecoration: "none", fontWeight: "700", fontSize: "14px", display: "inline-flex", alignItems: "center", gap: "6px", transition: "all 0.2s" }}
+                      onMouseEnter={(e) => { e.currentTarget.style.color = "#92400e"; e.currentTarget.style.transform = "translateX(4px)"; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.color = "#b45309"; e.currentTarget.style.transform = "translateX(0)"; }}
+                    >
+                      Explore on Goodreads →
+                    </a>
+                  </div>
+                </div>
+
               </div>
 
             </section>

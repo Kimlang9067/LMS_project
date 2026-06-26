@@ -74,6 +74,8 @@ export default function Register() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState(initialForm);
   const formRef = useRef(null);
+  const [showPwd, setShowPwd] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   // Clear state on mount and again after short delays
   // to fight browser autofill/password manager behavior
@@ -154,12 +156,13 @@ export default function Register() {
       loginAt: new Date().toISOString(),
     });
 
-    alert('Registration Successful!');
-
     setFormData(initialForm);
 
-    // Go directly to profile page
-    navigate('/userdashboard');
+    // Flag so the dashboard can show a registration-specific welcome banner
+    sessionStorage.setItem('justRegistered', 'true');
+    sessionStorage.removeItem('memberNotifShown'); // ensure banner shows
+
+    navigate('/user/dashboard');
   };
 
   const hover = (on, off) => ({
@@ -308,34 +311,76 @@ export default function Register() {
                 <label style={s.label} htmlFor="reg-new-password">
                   PASSWORD
                 </label>
-                <input
-                  id="reg-new-password"
-                  name="reg-new-password"
-                  type="password"
-                  placeholder="Password"
-                  value={formData.password}
-                  onChange={handleChange('password')}
-                  style={s.input}
-                  autoComplete="new-password"
-                  required
-                />
+                <div style={{ position: 'relative' }}>
+                  <input
+                    id="reg-new-password"
+                    name="reg-new-password"
+                    type={showPwd ? 'text' : 'password'}
+                    placeholder="Password"
+                    value={formData.password}
+                    onChange={handleChange('password')}
+                    style={{ ...s.input, paddingRight: '44px' }}
+                    autoComplete="new-password"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPwd(!showPwd)}
+                    style={s.eyeBtn}
+                    tabIndex={-1}
+                    aria-label={showPwd ? 'Hide password' : 'Show password'}
+                  >
+                    {showPwd ? (
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round">
+                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                        <line x1="1" y1="1" x2="23" y2="23"/>
+                      </svg>
+                    ) : (
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                      </svg>
+                    )}
+                  </button>
+                </div>
               </div>
 
               <div>
                 <label style={s.label} htmlFor="reg-confirm-new-password">
                   CONFIRM PASSWORD
                 </label>
-                <input
-                  id="reg-confirm-new-password"
-                  name="reg-confirm-new-password"
-                  type="password"
-                  placeholder="Confirm Your Password"
-                  value={formData.confirmPassword}
-                  onChange={handleChange('confirmPassword')}
-                  style={s.input}
-                  autoComplete="new-password"
-                  required
-                />
+                <div style={{ position: 'relative' }}>
+                  <input
+                    id="reg-confirm-new-password"
+                    name="reg-confirm-new-password"
+                    type={showConfirm ? 'text' : 'password'}
+                    placeholder="Confirm Your Password"
+                    value={formData.confirmPassword}
+                    onChange={handleChange('confirmPassword')}
+                    style={{ ...s.input, paddingRight: '44px' }}
+                    autoComplete="new-password"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirm(!showConfirm)}
+                    style={s.eyeBtn}
+                    tabIndex={-1}
+                    aria-label={showConfirm ? 'Hide password' : 'Show password'}
+                  >
+                    {showConfirm ? (
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round">
+                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                        <line x1="1" y1="1" x2="23" y2="23"/>
+                      </svg>
+                    ) : (
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                      </svg>
+                    )}
+                  </button>
+                </div>
               </div>
 
               <div style={s.checkboxRow}>
@@ -623,6 +668,20 @@ const s = {
     fontWeight: '600',
     color: '#44474c',
     cursor: 'pointer',
+  },
+
+  eyeBtn: {
+    position: 'absolute',
+    right: '12px',
+    top: '50%',
+    transform: 'translateY(-50%)',
+    background: 'none',
+    border: 'none',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    padding: '0',
+    lineHeight: 1,
   },
 
   hiddenField: {

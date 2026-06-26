@@ -1,18 +1,32 @@
 import React from 'react';
 import { DS, CARD } from './ds';
+import { useTheme } from '../../utils/theme';
 
 // ── Card ──────────────────────────────────────────────────────────────────────
 export function Card({ children, style }) {
-  return <div style={{ ...CARD, ...style }}>{children}</div>;
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
+  return (
+    <div style={{
+      ...CARD,
+      backgroundColor: isDark ? '#1e293b' : CARD.backgroundColor,
+      border: `1px solid ${isDark ? '#334155' : CARD.border}`,
+      ...style,
+    }}>
+      {children}
+    </div>
+  );
 }
 
 // ── Page Header ───────────────────────────────────────────────────────────────
 export function PageHeader({ title, subtitle, action }) {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
       <div>
-        <h1 style={{ margin: '0 0 4px', fontSize: '24px', fontWeight: '800', color: DS.textDark }}>{title}</h1>
-        {subtitle && <p style={{ margin: 0, fontSize: '14px', color: DS.textLight }}>{subtitle}</p>}
+        <h1 style={{ margin: '0 0 4px', fontSize: '24px', fontWeight: '800', color: isDark ? '#f1f5f9' : DS.textDark }}>{title}</h1>
+        {subtitle && <p style={{ margin: 0, fontSize: '14px', color: isDark ? '#94a3b8' : DS.textLight }}>{subtitle}</p>}
       </div>
       {action}
     </div>
@@ -21,15 +35,17 @@ export function PageHeader({ title, subtitle, action }) {
 
 // ── Stat Card ─────────────────────────────────────────────────────────────────
 export function StatCard({ label, value, icon, color = DS.textDark, bg = '#f1f5f9', sub }) {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   return (
-    <div style={{ ...CARD, display: 'flex', alignItems: 'center', gap: '16px' }}>
+    <div style={{ ...CARD, backgroundColor: isDark ? '#1e293b' : '#ffffff', border: `1px solid ${isDark ? '#334155' : CARD.border}`, display: 'flex', alignItems: 'center', gap: '16px' }}>
       <div style={{ width: '48px', height: '48px', borderRadius: '12px', backgroundColor: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px', flexShrink: 0 }}>
         {icon}
       </div>
       <div>
-        <p style={{ margin: '0 0 2px', fontSize: '11px', fontWeight: '700', color: DS.textLight, textTransform: 'uppercase', letterSpacing: '0.6px' }}>{label}</p>
-        <p style={{ margin: 0, fontSize: '22px', fontWeight: '800', color }}>{value}</p>
-        {sub && <p style={{ margin: '2px 0 0', fontSize: '11px', color: DS.textMuted }}>{sub}</p>}
+        <p style={{ margin: '0 0 2px', fontSize: '11px', fontWeight: '700', color: isDark ? '#94a3b8' : DS.textLight, textTransform: 'uppercase', letterSpacing: '0.6px' }}>{label}</p>
+        <p style={{ margin: 0, fontSize: '22px', fontWeight: '800', color: color === DS.textDark && isDark ? '#f1f5f9' : color }}>{value}</p>
+        {sub && <p style={{ margin: '2px 0 0', fontSize: '11px', color: isDark ? '#64748b' : DS.textMuted }}>{sub}</p>}
       </div>
     </div>
   );
@@ -119,9 +135,12 @@ export function GhostBtn({ onClick, children, style, type = 'button' }) {
 
 // ── Form Field ────────────────────────────────────────────────────────────────
 export function FormField({ label, value, onChange, type = 'text', disabled, placeholder }) {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
+  const borderCol = isDark ? '#334155' : DS.cardBorder;
   return (
     <div style={{ marginBottom: '16px' }}>
-      <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: DS.textMid, marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.6px' }}>
+      <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: isDark ? '#94a3b8' : DS.textMid, marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.6px' }}>
         {label}
       </label>
       <input
@@ -132,15 +151,15 @@ export function FormField({ label, value, onChange, type = 'text', disabled, pla
         placeholder={placeholder}
         style={{
           width: '100%', padding: '10px 14px',
-          border: `1px solid ${DS.cardBorder}`, borderRadius: '8px',
+          border: `1px solid ${borderCol}`, borderRadius: '8px',
           fontSize: '14px', outline: 'none', boxSizing: 'border-box',
-          backgroundColor: disabled ? '#f8fafc' : '#fff',
-          color: disabled ? DS.textMuted : DS.textDark,
+          backgroundColor: disabled ? (isDark ? '#0f172a' : '#f8fafc') : (isDark ? '#1F2937' : '#fff'),
+          color: disabled ? (isDark ? '#475569' : DS.textMuted) : (isDark ? '#f1f5f9' : DS.textDark),
           cursor: disabled ? 'not-allowed' : 'text',
           transition: 'border-color 0.15s',
         }}
         onFocus={e  => !disabled && (e.target.style.borderColor = '#3b82f6')}
-        onBlur={e   => (e.target.style.borderColor = DS.cardBorder)}
+        onBlur={e   => (e.target.style.borderColor = borderCol)}
       />
     </div>
   );
@@ -148,24 +167,28 @@ export function FormField({ label, value, onChange, type = 'text', disabled, pla
 
 // ── Info Row (read-only label + value) ────────────────────────────────────────
 export function InfoRow({ label, value }) {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   return (
-    <div style={{ display: 'flex', alignItems: 'center', padding: '13px 0', borderBottom: `1px solid ${DS.cardBorder}` }}>
-      <span style={{ width: '140px', flexShrink: 0, fontSize: '13px', fontWeight: '600', color: DS.textLight }}>{label}</span>
-      <span style={{ fontSize: '14px', color: DS.textDark, fontWeight: '500' }}>{value || '—'}</span>
+    <div style={{ display: 'flex', alignItems: 'center', padding: '13px 0', borderBottom: `1px solid ${isDark ? '#334155' : DS.cardBorder}` }}>
+      <span style={{ width: '140px', flexShrink: 0, fontSize: '13px', fontWeight: '600', color: isDark ? '#94a3b8' : DS.textLight }}>{label}</span>
+      <span style={{ fontSize: '14px', color: isDark ? '#f1f5f9' : DS.textDark, fontWeight: '500' }}>{value || '—'}</span>
     </div>
   );
 }
 
 // ── Data Table wrapper ────────────────────────────────────────────────────────
 export function DataTable({ columns, children, footer }) {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   return (
-    <div style={{ ...CARD, padding: 0, overflow: 'hidden' }}>
+    <div style={{ ...CARD, backgroundColor: isDark ? '#1e293b' : '#ffffff', border: `1px solid ${isDark ? '#334155' : CARD.border}`, padding: 0, overflow: 'hidden' }}>
       <div style={{ overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
           <thead>
-            <tr style={{ backgroundColor: '#f8fafc', borderBottom: `1px solid ${DS.cardBorder}` }}>
+            <tr style={{ backgroundColor: isDark ? '#0f172a' : '#f8fafc', borderBottom: `1px solid ${isDark ? '#334155' : DS.cardBorder}` }}>
               {columns.map(col => (
-                <th key={col} style={{ padding: '12px 20px', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.8px', color: DS.textLight }}>
+                <th key={col} style={{ padding: '12px 20px', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.8px', color: isDark ? '#cbd5e1' : DS.textLight }}>
                   {col}
                 </th>
               ))}
@@ -175,7 +198,7 @@ export function DataTable({ columns, children, footer }) {
         </table>
       </div>
       {footer && (
-        <div style={{ padding: '14px 20px', borderTop: `1px solid ${DS.cardBorder}`, backgroundColor: '#f8fafc', fontSize: '12px', color: DS.textLight }}>
+        <div style={{ padding: '14px 20px', borderTop: `1px solid ${isDark ? '#334155' : DS.cardBorder}`, backgroundColor: isDark ? '#0f172a' : '#f8fafc', fontSize: '12px', color: isDark ? '#94a3b8' : DS.textLight }}>
           {footer}
         </div>
       )}

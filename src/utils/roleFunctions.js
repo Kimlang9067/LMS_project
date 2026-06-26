@@ -48,39 +48,47 @@ export function formatLabel(key) {
 
 export const ROLE_MODULES = {
 
-  // Super Admin
-  users: {
-    title: "User Management",
-    summary: "Manage all library user accounts.",
-    formTitle: "Add New User",
+  // ── Super Admin exclusive modules ────────────────────────────────────────────
+
+  catalog: {
+    title: "Books & Catalog",
+    summary: "Add, edit, and manage the full library catalog of books and resources.",
+    formTitle: "Add Book",
     fields: [
-      { name: "name",  label: "Full Name", placeholder: "e.g. John Doe" },
-      { name: "email", label: "Email",     placeholder: "user@library.com" },
-      { name: "role",  label: "Role",      placeholder: "e.g. Member" },
+      { name: "title",     label: "Title",       placeholder: "e.g. Clean Code"           },
+      { name: "author",    label: "Author",       placeholder: "e.g. Robert C. Martin"     },
+      { name: "isbn",      label: "ISBN",         placeholder: "978-0-13-235088-4"         },
+      { name: "category",  label: "Category",     placeholder: "e.g. Software Engineering" },
     ],
-    columns: ["name", "email", "role", "status"],
-    actions: ["Activate", "Suspend"],
+    columns: ["title", "author", "isbn", "category"],
+    actions: ["Approve", "Archive"],
     initialRecords: [
-      { id: 1, name: "Alice Smith",  email: "alice@library.com", role: "Member", status: "Active",  updatedAt: "Today"     },
-      { id: 2, name: "Bob Lee",      email: "bob@library.com",   role: "Member", status: "Pending", updatedAt: "Yesterday" },
+      { id: 1, title: "Clean Code",               author: "Robert C. Martin", isbn: "978-0-13-235088-4", category: "Software Engineering", status: "Active", updatedAt: "Today"     },
+      { id: 2, title: "The Pragmatic Programmer", author: "David Thomas",     isbn: "978-0-13-595705-9", category: "Software Engineering", status: "Active", updatedAt: "Yesterday" },
+      { id: 3, title: "Sapiens",                  author: "Yuval Noah Harari",isbn: "978-0-06-231609-7", category: "History",              status: "Active", updatedAt: "Last week" },
     ],
   },
 
-  admins: {
-    title: "Admin Management",
-    summary: "Create and manage administrator accounts.",
-    formTitle: "Add New Admin",
+  settings: {
+    title: "System Settings",
+    summary: "Configure global system preferences, integrations, and operational parameters.",
+    formTitle: "Add Setting",
     fields: [
-      { name: "name",       label: "Full Name",   placeholder: "e.g. Jane Admin"  },
-      { name: "email",      label: "Email",       placeholder: "admin@library.com" },
-      { name: "department", label: "Department",  placeholder: "e.g. Operations"  },
+      { name: "key",         label: "Setting Key",   placeholder: "e.g. max_borrow_days"  },
+      { name: "value",       label: "Value",         placeholder: "e.g. 14"               },
+      { name: "description", label: "Description",   placeholder: "Setting description…"  },
     ],
-    columns: ["name", "email", "department", "status"],
-    actions: ["Activate", "Suspend"],
+    columns: ["key", "value", "description"],
+    actions: ["Activate", "Archive"],
     initialRecords: [
-      { id: 1, name: "Library Admin", email: "admin@library.com", department: "Operations", status: "Active", updatedAt: "Today" },
+      { id: 1, key: "max_borrow_days",  value: "14",    description: "Maximum number of days a book can be borrowed.",  status: "Active", updatedAt: "Today"    },
+      { id: 2, key: "fine_per_day",     value: "$0.25", description: "Fine charged per day for overdue books.",         status: "Active", updatedAt: "Today"    },
+      { id: 3, key: "max_books_limit",  value: "5",     description: "Maximum books a member can borrow at one time.",  status: "Active", updatedAt: "Today"    },
+      { id: 4, key: "renewal_limit",    value: "2",     description: "Maximum number of times a loan can be renewed.",  status: "Active", updatedAt: "Last week"},
     ],
   },
+
+  // ── Shared modules ────────────────────────────────────────────────────────────
 
   books: {
     title: "Book Management",
@@ -112,24 +120,6 @@ export const ROLE_MODULES = {
     actions: ["Publish", "Archive"],
     initialRecords: [
       { id: 1, title: "Library Hours Update", message: "Updated hours for the holiday season.", audience: "All Members", status: "Published", updatedAt: "Today" },
-    ],
-  },
-
-  // Administrator
-  policies: {
-    title: "Policy Management",
-    summary: "Define and manage library policies.",
-    formTitle: "New Policy",
-    fields: [
-      { name: "name",        label: "Policy Name", placeholder: "e.g. Borrowing Limit Policy" },
-      { name: "category",    label: "Category",    placeholder: "e.g. Circulation"            },
-      { name: "description", label: "Description", placeholder: "Policy details…"             },
-    ],
-    columns: ["name", "category", "description", "status"],
-    actions: ["Approve", "Archive"],
-    initialRecords: [
-      { id: 1, name: "Max Borrowing Limit", category: "Circulation", description: "Members can borrow up to 5 books at a time.", status: "Active", updatedAt: "Today"      },
-      { id: 2, name: "Fine Rate Policy",    category: "Fines",       description: "$0.25 per day for overdue books.",             status: "Active", updatedAt: "Last week"  },
     ],
   },
 
@@ -167,23 +157,6 @@ export const ROLE_MODULES = {
     ],
   },
 
-  // Librarian
-  members: {
-    title: "Member Management",
-    summary: "Register and manage library member accounts.",
-    formTitle: "Register Member",
-    fields: [
-      { name: "name",           label: "Full Name",       placeholder: "e.g. Sarah Johnson"       },
-      { name: "email",          label: "Email",           placeholder: "member@example.com"        },
-      { name: "membershipType", label: "Membership Type", placeholder: "e.g. Student, Faculty"    },
-    ],
-    columns: ["name", "email", "membershipType", "status"],
-    actions: ["Activate", "Suspend"],
-    initialRecords: [
-      { id: 1, name: "John Student", email: "john@rupp.edu",    membershipType: "Student", status: "Active", updatedAt: "Today"     },
-      { id: 2, name: "Dr. Faculty",  email: "faculty@rupp.edu", membershipType: "Faculty", status: "Active", updatedAt: "Yesterday" },
-    ],
-  },
 
   fines: {
     title: "Fines Management",

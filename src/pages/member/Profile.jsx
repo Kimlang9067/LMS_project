@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router';
 import {
   getCirculationRecords,
+  saveCirculationRecords,
   processExpiredLoans,
-  getActiveLoans,
   getBorrowingHistory,
 } from '../../utils/circulation';
 import { notifyProfileUpdated, checkReturnReminders } from '../../utils/notifications';
@@ -25,6 +25,9 @@ export default function Profile() {
   const [isEditing,      setIsEditing]      = useState(false);
   const [circulationRecs,setCirculationRecs]= useState([]);
   const [selectedImage,  setSelectedImage]  = useState(null);
+  const [openMenu,       setOpenMenu]       = useState(null);
+  const [confirmReturn,  setConfirmReturn]  = useState(null);
+  const [viewDetail,     setViewDetail]     = useState(null);
 
   const [user, setUser] = useState({ fullName: '', email: '', username: '', phone: '', userId: '', status: 'Active Member' });
   const [form, setForm] = useState({ name: '', email: '', phone: '' });
@@ -54,9 +57,24 @@ export default function Profile() {
 
   const userName    = user.fullName || user.username;
   const userRecs    = circulationRecs.filter(r => r.user === userName);
-  const activeLoans = getActiveLoans(userRecs);
+  const activeLoans = userRecs.filter(r => r.status === 'Borrowed' || r.status === 'Overdue');
   const history     = getBorrowingHistory(userRecs);
   const visible     = activeTab === 0 ? activeLoans : history;
+
+  const handleMarkReturn = () => {
+    if (!confirmReturn) return;
+    const updated = circulationRecs.map(r =>
+      r.id === confirmReturn.id
+        ? { ...r, status: 'Returned', returnDate: new Date().toISOString().slice(0, 10) }
+        : r
+    );
+    saveCirculationRecords(updated);
+    setCirculationRecs(updated);
+    setConfirmReturn(null);
+    alert(`"${confirmReturn.book}" has been returned successfully.`);
+  };
+
+  const closeMenu = () => setOpenMenu(null);
 
   const handleSave = (e) => {
     e.preventDefault();
@@ -79,6 +97,7 @@ export default function Profile() {
     reader.onload = () => {
       setSelectedImage(reader.result);
       localStorage.setItem(`memberAvatar_${user.username || 'member'}`, reader.result);
+      window.dispatchEvent(new CustomEvent('avatarUpdated'));
     };
     reader.readAsDataURL(file);
   };
@@ -102,8 +121,28 @@ export default function Profile() {
                 : <div style={s.avatarLg}>{form.name.charAt(0) || 'M'}</div>}
               <input type="file" ref={fileInputRef} style={{ display: 'none' }} accept="image/*" onChange={handleImageChange} />
               <div>
-                <button type="button" onClick={() => fileInputRef.current.click()} style={s.darkBtn}>Change Photo</button>
-                <p style={{ fontSize: '11px', color: '#94a3b8', marginTop: '6px' }}>PNG or JPG up to 2 MB.</p>
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '6px' }}>
+                  <button type="button" onClick={() => fileInputRef.current.click()} style={s.darkBtn}>Change Photo</button>
+                  {selectedImage && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const stored = localStorage.getItem('userAccount');
+                        if (stored) {
+                          const parsed = JSON.parse(stored);
+                          const key = `memberAvatar_${parsed.username || 'member'}`;
+                          localStorage.removeItem(key);
+                        }
+                        setSelectedImage(null);
+                        window.dispatchEvent(new CustomEvent('avatarUpdated'));
+                      }}
+                      style={{ ...s.ghostBtn, color: '#ef4444', border: '1px solid #fca5a5' }}
+                    >
+                      Remove Photo
+                    </button>
+                  )}
+                </div>
+                <p style={{ fontSize: '11px', color: '#94a3b8', marginTop: '0' }}>PNG or JPG up to 2 MB.</p>
               </div>
             </div>
 
@@ -143,10 +182,21 @@ export default function Profile() {
         <>
           {/* Profile hero */}
           <div style={{ marginBottom: '32px' }}>
-            <div style={{ ...s.card, display: 'flex', alignItems: 'flex-start', gap: '24px', position: 'relative' }}>
-              {selectedImage
-                ? <img src={selectedImage} alt="Avatar" style={s.avatarLg} />
-                : <div style={s.avatarLg}>{user.fullName?.charAt(0) || 'M'}</div>}
+            <div style={{ ...s.card, padding: 0, overflow: 'hidden', position: 'relative' }}>
+
+              {/* Banner */}
+              <div style={{ height: '100px', background: 'linear-gradient(135deg, #0f172a 0%, #1e3a5f 40%, #312e81 100%)', position: 'relative', overflow: 'hidden' }}>
+                <div style={{ position: 'absolute', top: '-24px', right: '-24px', width: '130px', height: '130px', borderRadius: '50%', backgroundColor: 'rgba(99,102,241,0.22)' }} />
+                <div style={{ position: 'absolute', bottom: '-35px', left: '35%', width: '100px', height: '100px', borderRadius: '50%', backgroundColor: 'rgba(59,130,246,0.16)' }} />
+              </div>
+
+              <div style={{ padding: '0 24px 24px', display: 'flex', alignItems: 'flex-start', gap: '24px', position: 'relative' }}>
+                {/* Avatar overlapping banner */}
+                <div style={{ flexShrink: 0, marginTop: '-50px' }}>
+                  {selectedImage
+                    ? <img src={selectedImage} alt="Avatar" style={{ ...s.avatarLg, border: '3px solid #fff', boxShadow: '0 4px 14px rgba(0,0,0,0.25)' }} />
+                    : <div style={{ ...s.avatarLg, border: '3px solid #fff', boxShadow: '0 4px 14px rgba(0,0,0,0.25)' }}>{user.fullName?.charAt(0) || 'M'}</div>}
+                </div>
 
               <div style={{ flex: 1 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '4px', flexWrap: 'wrap' }}>
@@ -172,6 +222,7 @@ export default function Profile() {
                   ))}
                 </div>
               </div>
+              </div>{/* end flex row */}
             </div>
           </div>
 
@@ -189,7 +240,7 @@ export default function Profile() {
           </div>
 
           {/* Table */}
-          <div style={{ ...s.card, padding: 0, overflow: 'hidden', marginBottom: '32px' }}>
+          <div style={{ ...s.card, padding: 0, overflow: 'hidden', marginBottom: '32px' }} onClick={closeMenu}>
             {visible.length === 0 ? (
               <div style={{ padding: '48px', textAlign: 'center', color: '#94a3b8' }}>
                 <p style={{ fontSize: '15px', margin: 0 }}>No items under "{TABS[activeTab]}".</p>
@@ -199,14 +250,21 @@ export default function Profile() {
                 <table style={s.table}>
                   <thead>
                     <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
-                      {['Book Details', 'Borrower', 'Issue Date', 'Due / Return Date', 'Status'].map(col => (
+                      {['Book Details', 'Issue Date', 'Due / Return Date', 'Status', 'Actions'].map(col => (
                         <th key={col} style={s.th}>{col}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {visible.map((r, i) => {
-                      const isExpired = r.returnDate && new Date() > new Date(r.returnDate);
+                      const isOverdue = r.status === 'Overdue' || (r.returnDate && r.status === 'Borrowed' && new Date() > new Date(r.returnDate));
+                      const statusLabel = r.status === 'Returned' ? 'Returned' : isOverdue ? 'Overdue' : 'Active Loan';
+                      const badgeStyle = r.status === 'Returned'
+                        ? { backgroundColor: '#dcfce7', color: '#16a34a' }
+                        : isOverdue
+                        ? { backgroundColor: 'rgba(185,28,28,0.1)', color: '#b91c1c' }
+                        : { backgroundColor: 'rgba(59,130,246,0.1)', color: '#2563eb' };
+                      const isActive = r.status === 'Borrowed' || r.status === 'Overdue';
                       return (
                         <tr key={r.id || i} style={{ backgroundColor: i % 2 === 0 ? '#fff' : '#f8faff' }}>
                           <td style={s.td}>
@@ -215,22 +273,37 @@ export default function Profile() {
                               <p style={{ margin: 0, fontSize: '14px', fontWeight: '700', color: '#0f172a' }}>{r.book}</p>
                             </div>
                           </td>
-                          <td style={{ ...s.td, color: '#475569', fontWeight: '600' }}>{r.user}</td>
                           <td style={{ ...s.td, color: '#64748b' }}>{r.issueDate || 'N/A'}</td>
-                          <td style={{ ...s.td, fontWeight: '700', color: r.status === 'Borrowed' ? (isExpired ? '#b91c1c' : '#0f172a') : '#16a34a' }}>
+                          <td style={{ ...s.td, fontWeight: '700', color: isOverdue ? '#b91c1c' : r.status === 'Returned' ? '#16a34a' : '#0f172a' }}>
                             {r.returnDate || 'N/A'}
                           </td>
                           <td style={s.td}>
-                            <span style={{
-                              display: 'inline-block', padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '700', letterSpacing: '0.5px',
-                              ...(r.status === 'Borrowed'
-                                ? (isExpired ? { backgroundColor: 'rgba(185,28,28,0.1)', color: '#b91c1c' } : { backgroundColor: 'rgba(59,130,246,0.1)', color: '#2563eb' })
-                                : r.status === 'Overdue'
-                                ? { backgroundColor: 'rgba(185,28,28,0.1)', color: '#b91c1c' }
-                                : { backgroundColor: '#dcfce7', color: '#16a34a' }),
-                            }}>
-                              {r.status === 'Borrowed' ? (isExpired ? 'Overdue' : 'Active Loan') : r.status === 'Overdue' ? 'Past Deadline' : 'Returned'}
+                            <span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '700', letterSpacing: '0.5px', ...badgeStyle }}>
+                              {statusLabel}
                             </span>
+                          </td>
+                          <td style={s.td}>
+                            <div style={{ position: 'relative', display: 'inline-block' }}>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); setOpenMenu(openMenu === (r.id || i) ? null : (r.id || i)); }}
+                                style={s.dotBtn}
+                                title="Actions"
+                              >
+                                ⋮
+                              </button>
+                              {openMenu === (r.id || i) && (
+                                <div style={s.dropMenu} onClick={e => e.stopPropagation()}>
+                                  <button style={s.dropItem} onClick={() => { setViewDetail(r); setOpenMenu(null); }}>
+                                    View Details
+                                  </button>
+                                  {isActive && (
+                                    <button style={{ ...s.dropItem, color: '#b91c1c' }} onClick={() => { setConfirmReturn(r); setOpenMenu(null); }}>
+                                      Mark Return
+                                    </button>
+                                  )}
+                                </div>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       );
@@ -243,6 +316,55 @@ export default function Profile() {
               Showing {visible.length} record{visible.length !== 1 ? 's' : ''}
             </div>
           </div>
+
+          {/* View Detail modal */}
+          {viewDetail && (
+            <div style={s.overlay} onClick={() => setViewDetail(null)}>
+              <div style={s.modal} onClick={e => e.stopPropagation()}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
+                  <div>
+                    <h3 style={{ margin: '0 0 4px', fontSize: '18px', fontWeight: '800', color: '#0f172a' }}>Loan Details</h3>
+                    <p style={{ margin: 0, fontSize: '13px', color: '#64748b' }}>Borrowing record information</p>
+                  </div>
+                  <button onClick={() => setViewDetail(null)} style={s.closeBtn}>✕</button>
+                </div>
+                {[
+                  { label: 'Book Title',   val: viewDetail.book },
+                  { label: 'Borrower',     val: viewDetail.user },
+                  { label: 'Issue Date',   val: viewDetail.issueDate || 'N/A' },
+                  { label: 'Due Date',     val: viewDetail.returnDate || 'N/A' },
+                  { label: 'Status',       val: viewDetail.status },
+                ].map(row => (
+                  <div key={row.label} style={{ display: 'flex', padding: '12px 0', borderBottom: '1px solid #f1f5f9' }}>
+                    <span style={{ width: '120px', flexShrink: 0, fontSize: '12px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase' }}>{row.label}</span>
+                    <span style={{ fontSize: '14px', fontWeight: '600', color: '#0f172a' }}>{row.val}</span>
+                  </div>
+                ))}
+                <div style={{ marginTop: '20px', textAlign: 'right' }}>
+                  <button onClick={() => setViewDetail(null)} style={s.ghostBtn}>Close</button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Mark Return confirmation modal */}
+          {confirmReturn && (
+            <div style={s.overlay} onClick={() => setConfirmReturn(null)}>
+              <div style={{ ...s.modal, maxWidth: '400px' }} onClick={e => e.stopPropagation()}>
+                <h3 style={{ margin: '0 0 12px', fontSize: '18px', fontWeight: '800', color: '#0f172a' }}>Confirm Return</h3>
+                <p style={{ margin: '0 0 8px', fontSize: '14px', color: '#475569' }}>
+                  Are you sure you want to return:
+                </p>
+                <p style={{ margin: '0 0 24px', fontSize: '15px', fontWeight: '700', color: '#0f172a' }}>
+                  "{confirmReturn.book}"
+                </p>
+                <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+                  <button onClick={() => setConfirmReturn(null)} style={s.ghostBtn}>Cancel</button>
+                  <button onClick={handleMarkReturn} style={{ ...s.darkBtn, backgroundColor: '#166534' }}>Confirm Return</button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Bottom grid: preferences + activity */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
@@ -319,4 +441,12 @@ const s = {
   prefDesc:   { fontSize: '12px', color: '#94a3b8', margin: 0 },
   toggle:     { width: '44px', height: '24px', borderRadius: '12px', position: 'relative', cursor: 'pointer', transition: 'background 0.2s', flexShrink: 0 },
   toggleDot:  { position: 'absolute', top: '3px', width: '18px', height: '18px', borderRadius: '50%', backgroundColor: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,0.2)', transition: 'transform 0.2s' },
+  dotBtn:     { background: 'none', border: 'none', cursor: 'pointer', fontSize: '20px', fontWeight: '700', color: '#475569', padding: '2px 8px', borderRadius: '6px', lineHeight: 1 },
+  dropMenu:   { position: 'absolute', right: 0, top: '110%', backgroundColor: '#fff', border: '1px solid #e2e8f0', borderRadius: '10px', boxShadow: '0 4px 16px rgba(0,0,0,0.12)', zIndex: 100, minWidth: '140px', overflow: 'hidden' },
+  dropItem:   { display: 'block', width: '100%', padding: '11px 16px', fontSize: '13px', fontWeight: '600', color: '#0f172a', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' },
+  overlay:    { position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' },
+  modal:      { backgroundColor: '#fff', borderRadius: '16px', padding: '28px', width: '100%', maxWidth: '520px', boxShadow: '0 20px 60px rgba(0,0,0,0.25)' },
+  closeBtn:   { background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px', color: '#94a3b8', padding: '4px', lineHeight: 1 },
+  ghostBtn:   { padding: '10px 20px', border: '1px solid #e2e8f0', borderRadius: '8px', backgroundColor: '#fff', fontSize: '14px', fontWeight: '600', cursor: 'pointer', color: '#475569' },
+  darkBtn:    { padding: '10px 20px', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: '700', cursor: 'pointer', color: '#fff', backgroundColor: '#0f172a' },
 };

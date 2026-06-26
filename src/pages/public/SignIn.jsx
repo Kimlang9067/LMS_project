@@ -1,13 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { notifyLogin } from '../../utils/notifications';
-import {
-  login,
-  ROLE_OPTIONS,
-  ROLES,
-  initStaffAccounts,
-  DEFAULT_STAFF_ACCOUNTS,
-} from '../../utils/auth';
+import { login, initStaffAccounts } from '../../utils/auth';
 
 function LibraryBookLogo({ size = 110 }) {
   return (
@@ -68,7 +62,7 @@ export default function SignIn({ userAccount, setUserAccount }) {
   const [memberId, setMemberId] = useState('');
   const [password, setPassword] = useState('');
   const [remember, setRemember] = useState(false);
-  const [selectedRole, setSelectedRole] = useState(ROLES.MEMBER);
+  const [showPassword, setShowPassword] = useState(false);
 
   const navigate = useNavigate();
   const formRef = useRef(null);
@@ -116,7 +110,7 @@ export default function SignIn({ userAccount, setUserAccount }) {
         return;
       }
 
-      const result = login(memberId, password, selectedRole);
+      const result = login(memberId, password);
       if (!result.success) {
         alert(result.message);
         return;
@@ -131,10 +125,6 @@ export default function SignIn({ userAccount, setUserAccount }) {
       alert(`Log in successful! Welcome, ${result.user.fullName || 'User'}.`);
       navigate(result.redirect);
     };
-
-  const demoAccount = selectedRole !== ROLES.MEMBER
-    ? DEFAULT_STAFF_ACCOUNTS.find((a) => a.role === selectedRole)
-    : null;
 
   const hover = (on, off) => ({
     onMouseEnter: (e) => {
@@ -234,36 +224,6 @@ export default function SignIn({ userAccount, setUserAccount }) {
               />
 
               <div>
-                <label style={s.label} htmlFor="login-role">
-                  SIGN IN AS
-                </label>
-                <select
-                  id="login-role"
-                  value={selectedRole}
-                  onChange={(e) => setSelectedRole(e.target.value)}
-                  style={{ ...s.input, cursor: 'pointer' }}
-                >
-                  {ROLE_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-                <p style={{ fontSize: '11px', color: '#888', marginTop: '6px', lineHeight: 1.4 }}>
-                  {ROLE_OPTIONS.find((o) => o.value === selectedRole)?.description}
-                </p>
-              </div>
-
-              {demoAccount && (
-                <div style={s.demoBox}>
-                  <p style={{ margin: '0 0 4px', fontWeight: '700', fontSize: '11px' }}>Demo credentials</p>
-                  <p style={{ margin: 0, fontSize: '11px', color: '#555' }}>
-                    Email: {demoAccount.email} · Password: {demoAccount.password}
-                  </p>
-                </div>
-              )}
-
-              <div>
                 <label style={s.label} htmlFor="login-id">
                   PHONE NUMBER OR EMAIL
                 </label>
@@ -296,19 +256,40 @@ export default function SignIn({ userAccount, setUserAccount }) {
                   </span>
                 </div>
 
-                <input
-                  id="login-password"
-                  name="login-password-random"
-                  type="password"
-                  placeholder="Password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  style={s.input}
-                  autoComplete="new-password"
-                  readOnly
-                  onFocus={(e) => e.target.removeAttribute('readonly')}
-                  required
-                />
+                <div style={{ position: 'relative' }}>
+                  <input
+                    id="login-password"
+                    name="login-password-random"
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="Password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    style={{ ...s.input, paddingRight: '44px' }}
+                    autoComplete="new-password"
+                    readOnly
+                    onFocus={(e) => e.target.removeAttribute('readonly')}
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    style={s.eyeBtn}
+                    tabIndex={-1}
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showPassword ? (
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round">
+                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                        <line x1="1" y1="1" x2="23" y2="23"/>
+                      </svg>
+                    ) : (
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                      </svg>
+                    )}
+                  </button>
+                </div>
               </div>
 
               <div style={s.checkboxRow}>
@@ -630,6 +611,20 @@ submitBtn: {
     cursor: 'pointer',
   },
 
+  eyeBtn: {
+    position: 'absolute',
+    right: '12px',
+    top: '50%',
+    transform: 'translateY(-50%)',
+    background: 'none',
+    border: 'none',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    padding: '0',
+    lineHeight: 1,
+  },
+
   hiddenField: {
     position: 'absolute',
     opacity: 0,
@@ -638,11 +633,5 @@ submitBtn: {
     height: '1px',
   },
 
-  demoBox: {
-    padding: '12px 14px',
-    backgroundColor: '#f0f4ff',
-    border: '1px solid #c7d2fe',
-    borderRadius: '8px',
-  },
 };
 

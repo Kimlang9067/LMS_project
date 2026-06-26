@@ -20,6 +20,14 @@ export default function BookDetails() {
   );
   const [borrowMessage, setBorrowMessage] = useState("");
   const [borrowed, setBorrowed] = useState(false);
+  const [showBorrowModal, setShowBorrowModal] = useState(false);
+
+  const today = new Date();
+  const todayStr = today.toISOString().slice(0, 10);
+  const dueDate = new Date(today);
+  dueDate.setDate(dueDate.getDate() + 14);
+  const dueDateStr = dueDate.toISOString().slice(0, 10);
+  const borrowerName = book ? getCurrentBorrowerName() : '';
 
   if (!book) {
     return (
@@ -44,28 +52,18 @@ export default function BookDetails() {
 
   const handleBorrow = () => {
     if (!canBorrow) return;
-
-    const borrower = getCurrentBorrowerName();
-    const today = new Date();
-    const returnDate = new Date(today);
-    returnDate.setDate(returnDate.getDate() + 14);
-    const returnDateStr = returnDate.toISOString().slice(0, 10);
-
     addCirculationRecord({
       id: Date.now(),
-      user: borrower,
+      user: borrowerName,
       book: book.title,
       link: book.link,
-      issueDate: today.toISOString().slice(0, 10),
-      returnDate: returnDateStr,
+      issueDate: todayStr,
+      returnDate: dueDateStr,
       status: "Borrowed",
     });
-
-    notifyBookBorrowed(book.title, returnDateStr);
-
-    setBorrowMessage(
-      "Book borrowed successfully! View it under Profile → Currently Borrowed."
-    );
+    notifyBookBorrowed(book.title, dueDateStr);
+    setShowBorrowModal(false);
+    setBorrowMessage("Book borrowed successfully! View it under Profile → Currently Borrowed.");
     setBorrowed(true);
   };
 
@@ -207,7 +205,7 @@ export default function BookDetails() {
 
         {!borrowed && (
           <button
-            onClick={handleBorrow}
+            onClick={() => canBorrow && setShowBorrowModal(true)}
             disabled={!canBorrow}
             style={btnStyle(canBorrow ? "#3b82f6" : "#ccc")}
           >
@@ -233,6 +231,40 @@ export default function BookDetails() {
           </button>
         )}
       </div>
+
+      {/* Borrow confirmation modal */}
+      {showBorrowModal && (
+        <div style={overlayStyle} onClick={() => setShowBorrowModal(false)}>
+          <div style={modalStyle} onClick={e => e.stopPropagation()}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "20px" }}>
+              <div>
+                <h3 style={{ margin: "0 0 4px", fontSize: "20px", fontWeight: "800", color: "#0f172a" }}>Confirm Borrow</h3>
+                <p style={{ margin: 0, fontSize: "13px", color: "#64748b" }}>Review your borrow details before confirming</p>
+              </div>
+              <button onClick={() => setShowBorrowModal(false)} style={closeBtnStyle}>✕</button>
+            </div>
+            {[
+              { label: "Book Title",   val: book.title },
+              { label: "Book ID",      val: `#${book.id}` },
+              { label: "Type",         val: book.type },
+              { label: "Borrower",     val: borrowerName },
+              { label: "Issue Date",   val: todayStr },
+              { label: "Due Date",     val: dueDateStr },
+            ].map(row => (
+              <div key={row.label} style={{ display: "flex", alignItems: "center", padding: "12px 0", borderBottom: "1px solid #f1f5f9" }}>
+                <span style={{ width: "110px", flexShrink: 0, fontSize: "12px", fontWeight: "700", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                  {row.label}
+                </span>
+                <span style={{ fontSize: "14px", fontWeight: "600", color: "#0f172a" }}>{row.val}</span>
+              </div>
+            ))}
+            <div style={{ marginTop: "24px", display: "flex", gap: "12px", justifyContent: "flex-end" }}>
+              <button onClick={() => setShowBorrowModal(false)} style={ghostBtnStyle}>Cancel</button>
+              <button onClick={handleBorrow} style={btnStyle("#3b82f6")}>Confirm Borrow</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -262,3 +294,44 @@ function btnStyle(bg) {
     transition: "background-color 0.2s ease",
   };
 }
+
+const overlayStyle = {
+  position: "fixed",
+  inset: 0,
+  backgroundColor: "rgba(0,0,0,0.5)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  zIndex: 1000,
+  padding: "20px",
+};
+
+const modalStyle = {
+  backgroundColor: "#fff",
+  borderRadius: "16px",
+  padding: "28px",
+  width: "100%",
+  maxWidth: "480px",
+  boxShadow: "0 20px 60px rgba(0,0,0,0.25)",
+};
+
+const closeBtnStyle = {
+  background: "none",
+  border: "none",
+  cursor: "pointer",
+  fontSize: "18px",
+  color: "#94a3b8",
+  padding: "4px",
+  lineHeight: 1,
+};
+
+const ghostBtnStyle = {
+  padding: "10px 20px",
+  border: "1px solid #e2e8f0",
+  borderRadius: "25px",
+  backgroundColor: "#fff",
+  fontSize: "14px",
+  fontWeight: "600",
+  cursor: "pointer",
+  color: "#475569",
+};
